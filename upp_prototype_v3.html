@@ -1,0 +1,2698 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Умный поиск · Прототип по макетам Figma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F8FC; --panel:#fff; --panel2:#FAFBFE;
+  --line:#E6E9F1; --line2:#EEF1F7;
+  --ink:#1B1E2B; --ink2:#4A5064; --ink3:#7A8296; --ink4:#A3AAB9;
+  --blue:#2F5CE0; --blue-d:#2449C4; --blue-l:#EEF2FE; --blue-l2:#E3EAFD;
+  --bub:#DCE7F9;
+  --green:#1E9E5A; --green-bg:#E7F7EF;
+  --red:#E5484D; --red-bg:#FDECEC;
+  --amber:#B8760A; --amber-bg:#FFF4DE;
+  --purple-bg:#EFF1FE; --purple:#5B5BD6;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Exo 2',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea{font:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#D7DBE8;border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+
+.app{height:100vh;display:flex;flex-direction:column}
+.top{height:52px;background:var(--panel);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;padding:0 18px;gap:14px;flex:none}
+.logo{line-height:1.15}
+.logo .n1{font-weight:800;font-size:15px;letter-spacing:-.01em}
+.logo .n2{font-size:10.5px;color:var(--ink3)}
+.top .sp{flex:1}
+.ticons{display:flex;align-items:center;gap:4px}
+.tic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  color:var(--ink3);font-size:15px;position:relative}
+.tic:hover{background:var(--blue-l);color:var(--blue)}
+.tic .dot{position:absolute;top:1px;right:0px;background:var(--red);color:#fff;font-size:8.5px;
+  font-weight:700;padding:1px 3px;border-radius:99px;line-height:1.3}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--green-bg);color:var(--green);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-left:4px;
+  cursor:pointer;position:relative}
+.avatar:hover{background:#D7F3E3}
+
+.body{flex:1;display:flex;min-height:0}
+
+.nav{width:230px;background:var(--panel);border-right:1px solid var(--line);flex:none;
+  display:flex;flex-direction:column;transition:width .2s ease;overflow:hidden}
+.nav.col{width:60px}
+.nav .nsc{flex:1;overflow-y:auto;padding:12px 10px 14px}
+.nnew{display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px;border:1px solid var(--line);border-radius:var(--r);color:var(--blue);
+  font-size:13.5px;font-weight:600;background:var(--panel);margin-bottom:14px;width:100%}
+.nnew:hover{border-color:var(--blue);background:var(--blue-l)}
+.nrow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;width:100%;
+  text-align:left;color:var(--ink2);font-size:13.5px;white-space:nowrap;margin-bottom:1px}
+.nrow:hover{background:var(--panel2)}
+.nrow.on{background:var(--blue-l);color:var(--blue);font-weight:600}
+.nrow .ic{width:17px;text-align:center;font-size:15px;flex:none;opacity:.85}
+.nrow .tx{flex:1;overflow:hidden;text-overflow:ellipsis}
+.nrow .cnt{font-size:11px;font-weight:700;background:var(--line2);color:var(--ink3);
+  padding:1px 7px;border-radius:99px;flex:none}
+.nrow.on .cnt{background:#fff;color:var(--blue)}
+.nrow .chev{font-size:10px;color:var(--ink4);flex:none;transition:transform .15s}
+.nrow .chev.open{transform:rotate(180deg)}
+.nsub{padding-left:10px;margin-bottom:6px}
+.nsubrow{display:flex;align-items:center;gap:8px;padding:7px 10px 7px 16px;border-radius:8px;width:100%;
+  text-align:left;font-size:13px;color:var(--ink2);white-space:nowrap}
+.nsubrow:hover{background:var(--panel2)}
+.nsubrow.on{background:var(--blue-l);color:var(--blue);font-weight:600}
+.nsubrow .tx{flex:1;overflow:hidden;text-overflow:ellipsis}
+.nsubrow .cnt{font-size:10.5px;font-weight:700;color:var(--ink4);flex:none}
+.nav.col .tx,.nav.col .cnt,.nav.col .chev,.nav.col .nnew span{display:none}
+.nav.col .nrow,.nav.col .nnew{justify-content:center;padding:9px 0}
+.nav.col .nsub{display:none}
+.navfoot{padding:8px;border-top:1px solid var(--line);flex:none}
+.collapseb{width:100%;display:flex;align-items:center;justify-content:center;padding:7px;
+  border-radius:7px;color:var(--ink4);font-size:13px}
+.collapseb:hover{background:var(--panel2);color:var(--ink2)}
+
+.cont{flex:1;min-width:0;display:flex;overflow:hidden}
+
+/* ===== START ===== */
+.start{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;
+  background:linear-gradient(180deg,#FBFBFE 0%,#F2F4FD 60%,#EFF1FC 100%)}
+.start .in{width:100%;max-width:820px}
+.start h1{font-size:32px;font-weight:700;letter-spacing:-.025em;text-align:center;margin-bottom:24px}
+.qbox{background:#fff;border:1.5px solid var(--blue);border-radius:12px;padding:6px 6px 6px 18px;
+  display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(47,92,224,.07)}
+.qbox input{flex:1;border:none;outline:none;padding:12px 0;font-size:15px;background:none;color:var(--ink)}
+.qbox input::placeholder{color:var(--ink4)}
+.sendb{width:40px;height:40px;border-radius:9px;background:var(--blue);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}
+.sendb:hover{background:var(--blue-d)}
+.tip{margin-top:12px;background:#fff;border:1.5px solid var(--blue);border-radius:12px;
+  padding:12px 16px;display:flex;align-items:center;gap:12px;font-size:14px;color:var(--ink)}
+.tip .x{color:var(--ink3);font-size:17px;padding:2px 5px;border-radius:6px;flex:none;margin-left:auto}
+.tip .x:hover{background:var(--line2);color:var(--ink)}
+.exam{margin-top:14px;text-align:center;font-size:13.5px;color:var(--ink3)}
+.exam a{color:var(--blue);cursor:pointer;text-decoration:none}
+.exam a:hover{text-decoration:underline}
+
+/* ===== ONBOARD ===== */
+.onb{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px;
+  background:linear-gradient(180deg,#FBFBFE 0%,#F2F4FD 100%)}
+.onb .in{max-width:640px;width:100%}
+.onb h1{font-size:30px;font-weight:700;letter-spacing:-.02em;margin-bottom:14px}
+.onb .lead{font-size:14.5px;color:var(--ink2);line-height:1.6;margin-bottom:26px}
+.onb .feat{display:flex;gap:14px;margin-bottom:20px}
+.onb .fic{width:38px;height:38px;border-radius:9px;background:var(--blue-l);color:var(--blue);
+  display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}
+.onb .ft{font-size:14.5px;font-weight:700;margin-bottom:3px}
+.onb .fd{font-size:13px;color:var(--ink3);line-height:1.5}
+.onb .go{margin-top:10px}
+
+/* ===== CHAT ===== */
+.chatcol{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg);border-right:1px solid var(--line);
+  transition:flex-basis .15s ease}
+.chatcol.narrow{flex:0 1 340px}
+.chatsc{flex:1;overflow-y:auto;padding:20px 24px 10px}
+.chatin{padding:10px 24px 18px;flex:none}
+.tabox{background:#fff;border:1.5px solid var(--blue);border-radius:12px;padding:11px 13px;
+  display:flex;flex-direction:column;gap:8px;min-height:80px}
+.tabox textarea{border:none;outline:none;resize:none;flex:1;font-size:14px;background:none;
+  color:var(--ink);min-height:36px}
+.tarow{display:flex;align-items:center;gap:8px}
+.tarow .sp{flex:1}
+
+.m{margin-bottom:16px;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.m.me{display:flex;justify-content:flex-end}
+.m.me .b{background:var(--bub);border-radius:12px;padding:10px 15px;font-size:13.5px;max-width:78%;line-height:1.5}
+.m.bot .b{font-size:13.5px;line-height:1.6;max-width:92%}
+.m.bot .b b{font-weight:600}
+.typing{display:flex;align-items:center;gap:10px;color:var(--ink3);font-size:13px;margin-bottom:16px}
+.tdots{display:flex;gap:3px}
+.tdots i{width:6px;height:6px;border-radius:50%;background:var(--blue);opacity:.35;animation:bnc 1s infinite}
+.tdots i:nth-child(2){animation-delay:.15s}
+.tdots i:nth-child(3){animation-delay:.3s}
+@keyframes bnc{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+.carw{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px}
+.carrow{display:flex;flex-wrap:wrap;gap:10px}
+/* Низ карусели по скрину из Figma: стрелки листания вместе слева,
+   «Продолжить» справа — раньше стрелки стояли по бокам от карточек,
+   а кнопка «Продолжить» вообще пропадала, пока ничего не выбрано (вместо
+   видимого disabled-состояния). */
+.carfoot{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+.carnavbtns{display:flex;gap:8px}
+.carnb{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);
+  color:var(--ink2);display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+.carnb:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+.carnb:disabled{opacity:.35;pointer-events:none}
+.bcard{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;
+  flex:1 1 170px;min-width:150px}
+.bcard .bt{font-size:13px;font-weight:700;margin-bottom:9px}
+.bcard .bl{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.cchip{border:1px solid var(--blue);border-radius:7px;padding:5px 9px;font-size:12px;
+  color:var(--blue);background:#fff;position:relative;text-align:left;line-height:1.3}
+.cchip:hover{background:var(--blue-l)}
+.cchip.sel{background:var(--blue);color:#fff}
+.sendb.muted{background:var(--panel2);color:var(--ink4);cursor:default}
+.sendb.muted:hover{background:var(--panel2)}
+
+.chiprow{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line)}
+.chiprow .lbl{font-size:11px;color:var(--ink4);width:100%;margin-bottom:1px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 13px;
+  font-size:12.5px;color:var(--ink2);font-weight:500}
+.chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+.chip.muted{color:var(--ink4)}
+.chip.back{border-color:var(--ink4);color:var(--ink3);font-weight:600;order:-1}
+.chip.back:hover{border-color:var(--ink2);color:var(--ink);background:var(--panel2)}
+.chip.prompt{border-style:dashed;color:var(--blue);background:var(--blue-l)}
+.chip.prompt:hover{border-style:solid}
+
+.ctac{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+  display:flex;align-items:center;gap:12px;margin-top:10px;max-width:380px}
+.ctac:hover{border-color:var(--blue);box-shadow:0 2px 10px rgba(47,92,224,.1)}
+.ctac .ic{width:36px;height:36px;border-radius:9px;background:var(--blue-l);color:var(--blue);
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+.ctac .tx{flex:1;font-size:13.5px;font-weight:600;color:var(--blue)}
+.ctac .cn{font-size:13.5px;color:var(--ink3);font-weight:600}
+
+/* Применённые критерии над/под CTA — можно отменить конкретный (✕) или
+   вернуться на шаг назад (← Назад), не открывая модалку «Критерии подбора». */
+.critchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-width:420px}
+.critchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);
+  background:#fff;border-radius:99px;padding:5px 6px 5px 12px;font-size:12px;color:var(--ink2)}
+.critx{border:none;background:var(--panel2);color:var(--ink3);width:17px;height:17px;border-radius:50%;
+  font-size:11px;line-height:1;cursor:pointer;flex:none}
+.critx:hover{background:var(--red);color:#fff}
+
+.blist{margin-top:10px;padding-left:2px}
+.blist li{font-size:13px;color:var(--ink2);margin-bottom:4px;list-style:none;padding-left:14px;position:relative}
+.blist li::before{content:'•';position:absolute;left:2px;color:var(--ink4)}
+
+.zerolink{color:var(--blue);text-decoration:none;font-weight:600;cursor:pointer}
+.zerolink:hover{text-decoration:underline}
+.infob{background:var(--blue-l);color:var(--ink2);border-radius:9px;padding:10px 13px;
+  font-size:12.5px;line-height:1.5;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start}
+
+/* ===== RIGHT: Ход подбора ===== */
+.rp{width:270px;flex:none;padding:14px 14px 14px 0;overflow-y:auto}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 14px}
+.pcard .t{font-size:13px;font-weight:700;margin-bottom:10px}
+.prow2{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:8px}
+.prow2 .l{color:var(--ink3)}
+.prow2 .v{font-weight:700;color:var(--amber)}
+.plist{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.pitem{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2);padding:3px 0}
+.pitem .nm{width:18px;height:18px;border-radius:5px;background:var(--blue-l);color:var(--blue);
+  font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.pitem.ok .nm{background:var(--green-bg);color:var(--green)}
+.pcta{margin-top:11px;width:100%;background:var(--blue);color:#fff;border-radius:9px;padding:9px;
+  font-size:13px;font-weight:600;text-align:center}
+.pcta:hover{background:var(--blue-d)}
+
+/* ===== GRID ===== */
+.gcol{width:620px;flex:1 1 620px;max-width:920px;background:#fff;border-right:1px solid var(--line);
+  display:flex;flex-direction:column;overflow:hidden}
+.gh{padding:13px 15px 0;flex:none}
+.gh1{display:flex;align-items:center;gap:9px}
+.gh1 .x{width:24px;height:24px;border-radius:7px;color:var(--ink3);display:flex;
+  align-items:center;justify-content:center;font-size:15px;flex:none}
+.gh1 .x:hover{background:var(--line2);color:var(--ink)}
+.gh1 .t{font-size:14.5px;font-weight:700;flex:1;letter-spacing:-.01em;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.gh1 .c{font-size:14.5px;color:var(--ink3);font-weight:600;flex:none}
+.gh1 .kb{color:var(--ink4);font-size:15px;padding:2px 4px}
+.gh2{display:flex;align-items:center;gap:8px;margin-top:11px;flex-wrap:wrap}
+.gbtn{display:flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--line);
+  border-radius:99px;font-size:12.5px;color:var(--ink2);font-weight:500;background:#fff}
+.gbtn:hover{border-color:var(--blue);color:var(--blue)}
+.gbtn .bdg{background:var(--blue);color:#fff;font-size:10px;font-weight:700;
+  padding:1px 6px;border-radius:99px;margin-left:1px}
+.gsc{flex:1;overflow-y:auto;padding:10px 15px 60px;margin-top:8px}
+.prow{border-radius:10px;padding:10px 10px;cursor:pointer;display:flex;gap:10px;margin-bottom:2px;
+  border:1px solid transparent}
+.prow:hover{background:var(--panel2)}
+.prow.on{background:var(--blue-l);border-color:var(--blue-l2)}
+.cb{width:16px;height:16px;border:1.5px solid #C5CBDA;border-radius:5px;flex:none;margin-top:2px;
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;background:#fff}
+.cb.on{background:var(--blue);border-color:var(--blue)}
+.pin{flex:1;min-width:0}
+.pr1{display:flex;gap:8px;align-items:flex-start}
+.pr1 .nm{flex:1;font-size:12.5px;font-weight:600;line-height:1.4;letter-spacing:-.005em}
+.pr1 .pz{font-size:12.5px;font-weight:600;white-space:nowrap;text-align:right}
+.pr1 .pz.no{color:var(--ink3);font-weight:500;font-size:11.5px}
+.pr2{display:flex;gap:6px;align-items:baseline;margin-top:3px;font-size:11px;color:var(--ink3);flex-wrap:wrap}
+.pr3{display:flex;align-items:center;gap:6px;margin-top:4px}
+.days{font-size:11px;color:var(--ink3);white-space:nowrap;font-weight:500}
+.urg{color:var(--red);font-weight:600;font-size:11px}
+.bulkbar{position:absolute;left:15px;right:15px;bottom:14px;background:var(--ink);color:#fff;
+  border-radius:11px;padding:10px 14px;display:flex;align-items:center;gap:16px;
+  box-shadow:0 8px 26px rgba(27,30,43,.25)}
+.gcol{position:relative}
+.bicon{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#fff;font-weight:500}
+.bicon:hover{color:#8CB0FF}
+.bicon.pri{font-weight:700}
+.bulkbar .sp{flex:1}
+.bcount{font-size:12px;color:#B9BFCC;font-weight:600}
+.bx{color:#B9BFCC;font-size:16px}
+.bx:hover{color:#fff}
+
+/* ===== CARD ===== */
+.ccol{width:420px;flex:none;background:#fff;display:flex;flex-direction:column;overflow:hidden;animation:slid .2s ease}
+@keyframes slid{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+.ch1{padding:13px 15px;display:flex;align-items:center;gap:8px;flex:none;flex-wrap:wrap}
+.regn{border:1px solid var(--line);border-radius:7px;padding:3px 8px;font-size:11.5px;color:var(--ink2);
+  font-weight:500;display:flex;align-items:center;gap:5px}
+.tagok{background:var(--green-bg);color:var(--green);font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px}
+.ch1 .lot{font-size:12px;color:var(--ink3)}
+.ch1 .sp{flex:1}
+.csc{flex:1;overflow-y:auto;padding:0 16px 16px}
+.ctit{font-size:17px;font-weight:700;letter-spacing:-.02em;line-height:1.35;margin-bottom:8px}
+.ccust{font-size:13px;color:var(--blue);text-decoration:none;display:inline-block;margin-bottom:14px}
+.ccust:hover{text-decoration:underline}
+.ktab{width:100%;border-collapse:collapse;margin-bottom:12px}
+.ktab td{padding:6px 0;font-size:13px;vertical-align:baseline}
+.ktab td:first-child{color:var(--ink3);white-space:nowrap;width:1%;padding-right:8px}
+.ktab td:last-child{text-align:right;font-weight:500;padding-left:8px}
+.morea{font-size:13px;color:var(--blue);cursor:pointer;display:inline-block;margin-bottom:14px}
+.morea:hover{text-decoration:underline}
+.docbox{background:var(--purple-bg);border-radius:12px;padding:13px 15px;margin-bottom:12px}
+.docbox .dt{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.spark{color:var(--purple);font-size:14px}
+.docbox ul{padding-left:15px}
+.docbox li{font-size:12.5px;color:var(--ink2);line-height:1.5;margin-bottom:4px}
+.docbox a{color:var(--blue);text-decoration:none}
+.docbox a:hover{text-decoration:underline}
+.allcrit{font-size:12.5px;color:var(--blue);cursor:pointer;font-weight:500}
+.allcrit:hover{text-decoration:underline}
+.cfoot{padding:13px 15px;border-top:1px solid var(--line);display:flex;gap:8px;flex:none}
+.bigb{flex:1;background:var(--blue);color:#fff;border-radius:10px;padding:11px;font-size:13.5px;
+  font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
+.bigb:hover{background:var(--blue-d)}
+.sqb{width:44px;border:1px solid var(--line);border-radius:10px;color:var(--ink2);
+  display:flex;align-items:center;justify-content:center;font-size:15px}
+.sqb:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ===== FULL PAGES: Подборки / Шаблоны ===== */
+.fpage{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--panel)}
+.fph{padding:26px 32px 0;flex:none;display:flex;align-items:center;gap:16px}
+.fph h1{font-size:26px;font-weight:700;letter-spacing:-.02em;flex:1}
+.fbtn{display:flex;align-items:center;gap:8px;padding:9px 16px;background:var(--blue);color:#fff;
+  border-radius:9px;font-size:13.5px;font-weight:600}
+.fbtn:hover{background:var(--blue-d)}
+.ftabs{display:flex;gap:22px;padding:18px 32px 0;border-bottom:1px solid var(--line);flex:none}
+.ftab{padding-bottom:11px;font-size:13.5px;color:var(--ink3);font-weight:500;display:flex;gap:6px;
+  border-bottom:2px solid transparent}
+.ftab.on{color:var(--blue);border-color:var(--blue);font-weight:600}
+.flist{flex:1;overflow-y:auto;padding:18px 32px}
+.frow{background:#fff;border:1px solid var(--line);border-radius:11px;padding:15px 18px;margin-bottom:9px;
+  display:flex;align-items:center;gap:13px;cursor:pointer}
+.frow:hover{border-color:var(--blue)}
+.frow.on{border-color:var(--blue);background:var(--blue-l)}
+.frow .fi{width:36px;height:36px;border-radius:9px;background:var(--blue-l);color:var(--blue);
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+.frow .ftx{flex:1;min-width:0}
+.frow .fn{font-size:14.5px;font-weight:600}
+.frow .fmeta{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink4);margin-top:2px}
+.frow .fdate{font-size:12.5px;color:var(--ink3);white-space:nowrap}
+.fkb{color:var(--ink4);font-size:16px;padding:2px 4px;border-radius:6px;flex:none}
+.fkb:hover{background:var(--line2);color:var(--ink)}
+
+/* ===== side detail panel for folders/templates ===== */
+.dcol{width:460px;flex:none;background:#fff;border-left:1px solid var(--line);
+  display:flex;flex-direction:column;overflow:hidden;animation:slid .2s ease}
+.dh{padding:16px 18px;display:flex;align-items:center;gap:10px;flex:none;border-bottom:1px solid var(--line)}
+.dh .t{font-size:16px;font-weight:700;flex:1;letter-spacing:-.01em}
+.dh .x{width:26px;height:26px;border-radius:7px;color:var(--ink3);display:flex;align-items:center;justify-content:center;font-size:16px}
+.dh .x:hover{background:var(--line2);color:var(--ink)}
+.dsc{flex:1;overflow-y:auto;padding:18px}
+.frule{display:flex;padding:11px 0;border-bottom:1px solid var(--line2);font-size:13.5px}
+.frule .fl{width:150px;color:var(--ink3);flex:none}
+.frule .fo{width:80px;color:var(--ink4);flex:none}
+.frule .fv{font-weight:600;color:var(--ink)}
+.dactions{display:flex;align-items:center;gap:16px;margin-top:18px;flex-wrap:wrap}
+.dact{font-size:13px;color:var(--blue);font-weight:500;display:flex;align-items:center;gap:6px}
+.dact:hover{text-decoration:underline}
+.dact.pri{background:var(--blue-l);color:var(--blue);padding:9px 15px;border-radius:9px}
+.dact.pri:hover{text-decoration:none;background:var(--blue-l2)}
+.dact.danger{color:var(--red);margin-left:auto}
+
+.efield{margin-bottom:14px}
+.esearch{border:1px solid var(--line);border-radius:9px;padding:10px 13px;font-size:13px;color:var(--ink2);
+  background:var(--panel2);display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.econd{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.econd .en{font-size:12.5px;color:var(--ink4);width:16px;flex:none}
+.esel{flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:12.5px;
+  color:var(--ink2);display:flex;align-items:center;justify-content:space-between;background:#fff}
+.esel.op{flex:0 0 90px}
+.eadd{display:flex;align-items:center;gap:7px;color:var(--blue);font-size:13px;font-weight:500;margin:6px 0 20px}
+.eadd:hover{text-decoration:underline}
+.esave{background:var(--blue);color:#fff;padding:9px 18px;border-radius:9px;font-size:13.5px;font-weight:600}
+.esave:hover{background:var(--blue-d)}
+.ecancel{color:var(--ink3);font-size:13.5px;margin-left:12px}
+.ecancel:hover{color:var(--ink)}
+
+.req{display:none;font-size:9px;font-weight:700;color:var(--purple);background:var(--purple-bg);
+  padding:1px 5px;border-radius:4px;margin-left:5px;vertical-align:1px}
+body.reqs .req{display:inline-block}
+
+/* ===== rail: progress + criteria link ===== */
+:root{--rust:#9A3412;--rust-bg:#FBE4DA}
+.pbar{height:6px;border-radius:99px;background:var(--rust-bg);overflow:hidden;margin-top:9px}
+.pbar i{display:block;height:100%;border-radius:99px;transition:width .3s ease}
+.pcrit{margin-top:13px;font-size:12.5px;color:var(--blue);font-weight:600;cursor:pointer;display:inline-block}
+.pcrit:hover{text-decoration:underline}
+
+/* ===== shared dropdown component (stable open/close) ===== */
+.esel{position:relative}
+.ddwrap{position:relative;display:inline-flex}
+.ddtrig{width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;
+  font-size:12.5px;color:var(--ink2);gap:6px}
+.ddmenu{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--line);
+  border-radius:9px;box-shadow:0 10px 28px rgba(27,30,43,.16);z-index:20;max-height:230px;overflow-y:auto;
+  padding:4px;min-width:170px}
+.ddmenu.up{top:auto;bottom:calc(100% + 4px)}
+.ddopt{padding:7px 9px;font-size:12.5px;color:var(--ink2);border-radius:6px;white-space:nowrap}
+.ddopt:hover{background:var(--blue-l);color:var(--blue)}
+.ddopt.on{color:var(--blue);font-weight:600}
+
+/* ===== criteria modal ===== */
+.modalbg{position:fixed;inset:0;background:rgba(27,30,43,.42);z-index:200;display:flex;
+  align-items:center;justify-content:center;padding:24px}
+.modalcard{background:#fff;border-radius:16px;width:100%;max-width:740px;max-height:86vh;
+  overflow-y:auto;box-shadow:0 20px 60px rgba(27,30,43,.3);padding:20px 22px}
+.mhead{display:flex;align-items:center;margin-bottom:14px}
+.mtitle{font-size:17px;font-weight:700;flex:1;letter-spacing:-.01em}
+.mx{font-size:18px;color:var(--ink3);width:28px;height:28px;border-radius:8px;display:flex;
+  align-items:center;justify-content:center;flex:none}
+.mx:hover{background:var(--line2);color:var(--ink)}
+.mrow0{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
+  border-radius:9px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:var(--ink2)}
+.mrow0 .mquery{flex:1}
+.mrow0 .mcount{font-weight:700}
+.crow{display:flex;align-items:center;gap:7px;padding:6px 4px;border-radius:9px;margin-bottom:7px}
+.crow.warn{background:#FFF8EC}
+.cidx{width:15px;color:var(--ink4);font-size:12.5px;flex:none}
+.cdelta{color:var(--ink4);font-size:12px;width:58px;text-align:right;flex:none}
+.ctotal{font-weight:700;font-size:13px;width:54px;text-align:right;flex:none}
+.cwarn{color:var(--amber);flex:none;font-size:14px}
+.ctrash{color:var(--ink4);font-size:14px;width:27px;height:27px;border-radius:7px;display:flex;
+  align-items:center;justify-content:center;flex:none}
+.ctrash:hover{background:var(--red-bg);color:var(--red)}
+.mfoot{display:flex;align-items:center;margin-top:16px;gap:14px}
+.sp2{flex:1}
+.eval{font-size:12.5px;color:var(--ink2)}
+
+/* ===== модалка «Сохранить процедуры» ===== */
+.sffield{border:1.5px solid var(--line);border-radius:10px;padding:10px 13px;margin-bottom:14px;transition:border-color .15s}
+.sffield.on{border-color:var(--blue)}
+.sflabel{font-size:11.5px;color:var(--ink3);margin-bottom:4px}
+.sfrow{display:flex;align-items:center;gap:8px}
+.sfrow input{border:none;outline:none;flex:1;font-size:13.5px;color:var(--ink);background:none}
+.sfrow input:disabled{color:var(--ink4)}
+.sfclear{color:var(--ink4);font-size:15px;width:22px;height:22px;border-radius:6px;flex:none;
+  display:flex;align-items:center;justify-content:center}
+.sfclear:hover{background:var(--line2);color:var(--ink)}
+.sflist{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto}
+.sfitem{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  border:1.5px solid var(--line);cursor:pointer}
+.sfitem:hover{border-color:var(--blue-l2);background:var(--panel2)}
+.sfitem.on{border-color:var(--blue);background:var(--blue-l)}
+.sfi{font-size:16px;flex:none}
+.sftx{flex:1;font-size:13.5px;font-weight:600;color:var(--ink)}
+.sfcnt{font-size:12px;color:var(--ink3);flex:none}
+.sfdate{font-size:12px;color:var(--ink4);flex:none;width:52px;text-align:right}
+.sffoot{display:flex;gap:10px;margin-top:18px}
+.sfbtn{flex:1;padding:11px;border-radius:9px;font-size:13.5px;font-weight:600;
+  border:1px solid var(--line);color:var(--ink2)}
+.sfbtn:hover{border-color:var(--blue);color:var(--blue)}
+.sfbtn.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+.sfbtn.pri:hover{background:var(--blue-d)}
+
+/* ===== LANDING: открытая часть Росэлторг (точка входа до онбординга) ===== */
+.land{height:100vh;overflow-y:auto;background:radial-gradient(circle at 78% 8%,rgba(255,255,255,.06),transparent 45%),
+  linear-gradient(165deg,#0B1440 0%,#132873 46%,#0E1C58 100%);color:#fff}
+.ltop{display:flex;align-items:center;gap:26px;padding:16px 34px;border-bottom:1px solid rgba(255,255,255,.08)}
+.ltop .llogo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px;letter-spacing:.01em;flex:none}
+.ltop .llogo .lm{width:26px;height:26px;border:1.5px solid #fff;border-radius:6px;display:flex;align-items:center;
+  justify-content:center;font-size:13px}
+.lmenu{display:flex;align-items:center;gap:22px;flex:1;font-size:13.5px;color:rgba(255,255,255,.78);flex-wrap:wrap}
+.lmenu a{white-space:nowrap;cursor:default}
+.lmenu a:hover{color:#fff}
+.licons{display:flex;align-items:center;gap:6px;flex:none}
+.licons .tic{color:rgba(255,255,255,.8);position:relative}
+.licons .tic:hover{background:rgba(255,255,255,.1);color:#fff}
+.licons .dot{position:absolute;top:1px;right:0;background:var(--red);color:#fff;font-size:8.5px;font-weight:700;
+  padding:1px 3px;border-radius:99px;line-height:1.3}
+.lava{width:30px;height:30px;border-radius:50%;background:var(--green-bg);color:var(--green);display:flex;
+  align-items:center;justify-content:center;font-size:11.5px;font-weight:700;margin-left:2px}
+.lhero{padding:56px 24px 40px;text-align:center;max-width:900px;margin:0 auto}
+.ltoggle{display:inline-flex;align-items:center;gap:12px;font-size:13.5px;color:rgba(255,255,255,.9);margin-bottom:26px}
+.ltoggle .lsw{width:38px;height:22px;border-radius:99px;background:var(--blue);position:relative;flex:none}
+.ltoggle .lsw i{position:absolute;top:2px;left:18px;width:18px;height:18px;border-radius:50%;background:#fff}
+.lhero h1{font-size:38px;font-weight:700;letter-spacing:-.02em;margin-bottom:26px}
+.ltabs{display:inline-flex;background:rgba(255,255,255,.08);border-radius:10px;padding:4px;gap:2px;margin-bottom:22px}
+.ltabs button{padding:9px 20px;border-radius:8px;font-size:13.5px;font-weight:600;color:rgba(255,255,255,.75)}
+.ltabs button.on{background:#fff;color:var(--ink)}
+.lbanner{background:linear-gradient(90deg,#3653D4,#6B4FE0);border-radius:13px;padding:15px 16px 15px 20px;
+  display:flex;align-items:center;gap:16px;max-width:640px;margin:0 auto;cursor:pointer;
+  box-shadow:0 10px 30px rgba(30,50,160,.35)}
+.lbanner:hover{box-shadow:0 14px 36px rgba(30,50,160,.5)}
+.lbanner .lbtxt{flex:1;text-align:left}
+.lbanner .lbtxt b{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:700}
+.lbanner .lbtxt span{display:block;font-size:12.5px;color:rgba(255,255,255,.85);margin-top:3px}
+.lbtn{background:#fff;color:var(--ink);font-weight:600;font-size:13px;padding:9px 18px;border-radius:8px;flex:none}
+.lbtn:hover{background:#EDF0FA}
+.lstd{margin-top:14px;font-size:12.5px;color:rgba(255,255,255,.55)}
+.lcards{display:flex;gap:14px;padding:0 24px 40px;max-width:1120px;margin:0 auto;overflow-x:auto}
+.lcard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;
+  width:160px;height:170px;flex:none;padding:16px;display:flex;flex-direction:column;justify-content:flex-end;
+  font-size:12.5px;font-weight:600;position:relative;overflow:hidden}
+.lcard.big{width:300px;background:#EEF1FA;color:var(--ink)}
+.lcard .lci{position:absolute;top:14px;right:14px;font-size:26px;opacity:.9}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="logo"><div class="n1">РОСЭЛТОРГ</div><div class="n2">Сервис умного поиска</div></div>
+    <div class="sp"></div>
+    <div class="avatar" data-dd="avatar" onclick="event.stopPropagation();toggleDD('avatar')">КК
+      <div id="avatarMenu"></div>
+    </div>
+  </div>
+
+  <div class="body">
+    <nav class="nav" id="nav">
+      <div class="nsc" id="navSc"></div>
+      <div class="navfoot"><button class="collapseb" id="burger">‹</button></div>
+    </nav>
+    <div class="cont" id="cont"></div>
+  </div>
+</div>
+<div id="landingLayer" style="display:none"></div>
+<div id="modalLayer"></div>
+<div id="saveModalLayer"></div>
+
+<script>
+/* =====================================================================
+   ДАННЫЕ ПРОЦЕДУР — щедро расширенный, разнокатегорийный демо-набор.
+   Раньше в базе было всего 12 позиций про плитку, и грид на любой запрос
+   показывал одно и то же. Теперь категорий — 12, значения (город, цена,
+   заказчик, тип торгов) — вариативные и генерируются детерминированно
+   (фиксированный сид — набор одинаковый при каждой перезагрузке, для
+   стабильности демо), а какие именно позиции показать — решает движок
+   релевантности ниже (rankMatches / REAL_FILTER_PRED).
+   ===================================================================== */
+const MONTHS_RU=['янв.','февр.','мар.','апр.','мая','июн.','июл.','авг.','сен.','окт.','нояб.','дек.'];
+function fakeDate(daysFromNow){
+  const base=new Date(2026,7,10);
+  const d=new Date(base.getTime()+daysFromNow*86400000);
+  return String(d.getDate()).padStart(2,'0')+' '+MONTHS_RU[d.getMonth()]+' '+d.getFullYear()+' в 09:00 мск';
+}
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=seed+0x6D2B79F5|0;
+    let t=Math.imul(seed^seed>>>15,1|seed);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+const _rnd=mulberry32(42);
+const CITIES=['г. Ярославль, ул. Строителей 22','г. Москва, Пресненская наб. 6','г. Санкт-Петербург, Невский пр-т 100',
+ 'г. Казань, ул. Баумана 15','г. Екатеринбург, пр-т Ленина 24','г. Новосибирск, Красный пр-т 50',
+ 'г. Краснодар, ул. Красная 30','г. Нижний Новгород, ул. Большая Покровская 10','г. Тюмень, ул. Республики 12'];
+/* Регион заказчика в базе отдельным полем не хранится — есть только полный
+   адрес (CITIES/p.place). Раньше FIELD_DEFS['Регион заказчика'] был захардкожен
+   одним-единственным значением «Ярославская обл.», и предикат сравнивал ЕГО
+   с городом («ярославль».includes(«ярославская обл.») — никогда не true) —
+   поэтому регион не срабатывал вообще ни для одного значения, включая
+   собственный чип. Теперь регион — реальная производная от города в адресе:
+   ключ — короткое имя города (как оно встречается в CITIES), значение — то,
+   что реально показываем/сравниваем как «регион». */
+const CITY_REGION = {
+ 'Ярославль':'Ярославская обл.', 'Москва':'г. Москва', 'Санкт-Петербург':'г. Санкт-Петербург',
+ 'Казань':'Республика Татарстан', 'Екатеринбург':'Свердловская обл.', 'Новосибирск':'Новосибирская обл.',
+ 'Краснодар':'Краснодарский край', 'Нижний Новгород':'Нижегородская обл.', 'Тюмень':'Тюменская обл.',
+};
+function regionOf(place){
+  const city = Object.keys(CITY_REGION).find(c=>String(place||'').toLowerCase().includes(c.toLowerCase()));
+  return city ? CITY_REGION[city] : null;
+}
+const CUSTOMERS=['ООО «Сервис Логистика и Консалтинг»','ПАО «Западно-Сибирская торговая компания»','ООО «Компания»',
+ 'ГАУЗ ЯО «Областная больница»','АО «Ярославский завод»','МУП «Ярославльводоканал»','ООО «РИ-ИНВЕСТ»',
+ 'ООО «СтройИнвест-Регион»','АО «ТехноСервис»','ООО «Меркурий Групп»','ФГБУ «Центр обеспечения закупок»','ООО «Альянс-Строй»'];
+const TT_TYPES=['Частные торги','Коммерческие закупки','223-ФЗ','44-ФЗ'];
+let _pcSeq=0;
+function genId(){ _pcSeq++; return 'B'+(1707250938500+_pcSeq*37); }
+
+/* Категории закупок: ключевые слова для сопоставления с текстом запроса + заготовки названий лотов + диапазон НМЦ */
+const CATS=[
+ {kind:'товары', tags:['плитка','кафель','керамогранит','сухие смеси','клей','краска','стройматериалы','строительные материалы','отделка','отделочные материалы','асфальт'],
+  pMin:280000,pMax:520000, items:[
+   'Выполнение работ по восстановлению асфальтобетонного покрытия дорог, тротуаров, покрытия из тротуарной плитки',
+   'Отделочные материалы (плитка)',
+   'Поставка керамической плитки для отделочных работ',
+   'Плитка потолочная «БАЙКАЛ» 600х600х12 мм для подвесного потолка',
+   'Поставка плитки керамической, керамогранита и смесей сухих строительных',
+   'Приобретение керамогранита для облицовки фасада административного здания',
+   'Поставка клея плиточного и сухих строительных смесей',
+  ]},
+ {kind:'товары', tags:['бетон','жби','раствор','цемент','щебень','бетонные изделия','плиты'],
+  pMin:260000,pMax:950000, items:[
+   'Поставка бетона товарного класса В25 (М300)',
+   'Поставка железобетонных изделий (плиты перекрытия, кольца колодцев)',
+   'Поставка цемента навалом и щебня фракции 5-20',
+   'Поставка сухого бетона в мешках для ремонтных работ',
+  ]},
+ {kind:'товары', tags:['спецодежда','сиз','костюм','перчатки','каска','средства защиты','рабочая одежда'],
+  pMin:60000,pMax:320000, items:[
+   'Поставка спецодежды и СИЗ для производственного персонала',
+   'Поставка защитных касок, перчаток и очков',
+   'Поставка сигнальных жилетов и рабочих костюмов',
+   'Поставка зимней спецодежды для складского персонала',
+  ]},
+ {kind:'товары', tags:['мебель','офисная мебель','стол','кресло','шкаф','переговорная'],
+  pMin:150000,pMax:750000, items:[
+   'Поставка офисной мебели (столы, кресла, шкафы)',
+   'Поставка мебели для переговорных комнат',
+   'Поставка мебели для оснащения нового офиса',
+  ]},
+ {kind:'товары', tags:['канцелярия','бумага','ручки','канцтовары','расходные материалы'],
+  pMin:30000,pMax:160000, items:[
+   'Поставка канцелярских товаров для нужд администрации',
+   'Поставка бумаги офисной А4 и расходных материалов',
+   'Поставка канцелярских принадлежностей для склада',
+  ]},
+ {kind:'товары', tags:['компьютер','ноутбук','оргтехника','принтер','монитор','it','техника','сервер'],
+  pMin:320000,pMax:1600000, items:[
+   'Поставка компьютерной техники и мониторов',
+   'Поставка ноутбуков для сотрудников',
+   'Поставка принтеров и расходных материалов для оргтехники',
+   'Поставка серверного оборудования для дата-центра',
+  ]},
+ {kind:'услуги', tags:['клининг','уборка','хозтовары','моющие средства'],
+  pMin:80000,pMax:420000, items:[
+   'Оказание клининговых услуг в административном здании',
+   'Поставка хозтоваров и моющих средств',
+   'Поставка расходных материалов для клининга',
+  ]},
+ {kind:'работы', tags:['ремонт','отделочные работы','строительные работы','монтаж','реконструкция'],
+  pMin:420000,pMax:2100000, items:[
+   'Выполнение ремонтно-отделочных работ в помещении склада',
+   'Выполнение строительно-монтажных работ на объекте',
+   'Ремонтно-строительные работы по замене напольного покрытия',
+  ]},
+ {kind:'товары', tags:['автомобиль','запчасти','шины','автотранспорт','грузовик','транспорт'],
+  pMin:210000,pMax:2600000, items:[
+   'Поставка запасных частей для автотранспорта',
+   'Поставка автомобильных шин',
+   'Поставка легкового автомобиля для нужд организации',
+  ]},
+ {kind:'товары', tags:['питание','продукты','столовая','обед','кейтеринг'],
+  pMin:100000,pMax:620000, items:[
+   'Организация питания сотрудников на производственной площадке',
+   'Поставка продуктов питания для столовой',
+   'Поставка кофе и чая для офиса',
+  ]},
+ {kind:'товары', tags:['электрика','кабель','освещение','светильники','электротехника'],
+  pMin:70000,pMax:520000, items:[
+   'Поставка электротехнической продукции',
+   'Поставка светодиодных светильников и кабельной продукции',
+   'Поставка электроустановочных изделий',
+  ]},
+ {kind:'товары', tags:['медицинское оборудование','медтехника','больница'],
+  pMin:320000,pMax:3100000, items:[
+   'Поставка медицинского оборудования для стационара',
+   'Поставка расходных материалов для больницы',
+   'Поставка медицинских расходных материалов',
+  ]},
+];
+
+/* На каждое название лота — несколько экземпляров с разными городом/ценой/
+   заказчиком/типом торгов (а не один), иначе датасет физически слишком
+   разрежен: после сужения по категории (запросом) в нём остаётся всего
+   2-7 позиций, и настоящая фильтрация по городу/цене почти всегда даёт 0
+   совпадений — addFilter() в этом случае не сужает список (чтобы не
+   показывать пустоту), и снаружи это выглядит так, будто фильтр вообще
+   не фильтрует, а только подменяет текст. Город назначаем циклически
+   (курсор, не случайно) — так он гарантированно равномерно распределён
+   по всей базе, а не зависит от везения генератора случайных чисел. */
+
+/* Наборы значений — из «Критерии УПП - Варианты ответа.csv» (реальный список
+   критериев сервиса). Каждой процедуре присваиваем правдоподобное значение
+   по каждому полю, чтобы диалоговые вопросы по ним могли реально фильтровать
+   базу, а не только косметически подменять текст в карточке. */
+const PAYMENT_TYPES=['аванс','комбо','отсрочка','постоплата'];
+const PAYMENT_EVENTS=['подписание актов','приемка','поставка','счет'];
+const PAYMENT_STAGES=['единовременно','по этапам','график платежей'];
+const EQUIVALENT_VALS=['допускается','не допускается','условно'];
+const EXPERIENCE_SRC_VALS=['договоры из ЕИС','любые договоры'];
+const ASSESSMENT_VALS=['только цена','не только цена'];
+const DELIVERY_MODES=['разово','по заявкам','партиями'];
+const METHOD_VALS=['Аукцион','Конкурс','Запрос котировок','Запрос предложений'];
+const STATUS_VALS=['Активные','Архивные'];
+
+/* Раньше одно и то же название лота клонировалось 14 раз подряд — в гриде
+   это выглядело как «очень много процедур с одинаковым названием». Теперь
+   вариантов на каждое название меньше, а сами варианты различаются
+   дополнительной припиской (см. TITLE_SUFFIXES) — суффиксов больше, чем
+   вариантов на одно название, так что в пределах одной базовой позиции
+   повторов текста не будет вовсе. */
+const TITLE_SUFFIXES=['',' — партия 1',' — партия 2',' на 2026 год',' на 2027 год',
+ ' для филиала',' для нового объекта',' в рамках сервисного договора',' (повторная закупка)',' для склада №2'];
+const PROCS=[];
+const VARIANTS_PER_ITEM=6; /* 43 названия × 6 = ~258 процедур, без повторов текста внутри одного названия */
+let _cityCursor=0, _custCursor=0;
+CATS.forEach(cat=>{
+  cat.items.forEach(baseTitle=>{
+    for(let v=0; v<VARIANTS_PER_ITEM; v++){
+      const title = baseTitle + TITLE_SUFFIXES[v % TITLE_SUFFIXES.length];
+      const city=CITIES[_cityCursor%CITIES.length]; _cityCursor++;
+      const cust=CUSTOMERS[_custCursor%CUSTOMERS.length]; _custCursor+=3;
+      const tt=TT_TYPES[_rnd()<0.5?0:(1+Math.floor(_rnd()*3))];
+      const urgent=_rnd()<0.06;
+      const noPrice=_rnd()<0.1;
+      const nmck=noPrice?null:Math.round((cat.pMin+_rnd()*(cat.pMax-cat.pMin))/100)*100+0.99;
+      const days=urgent?0.5:Math.round(1+_rnd()*40);
+      const pubDays=Math.round(_rnd()*45); /* сколько дней назад опубликована — для сортировки «Дата публикации» */
+
+      const orderType=cat.kind;
+      const paymentType=PAYMENT_TYPES[Math.floor(_rnd()*PAYMENT_TYPES.length)];
+      const prepaidExpense=paymentType==='аванс'?(30+Math.floor(_rnd()*70)):(paymentType==='комбо'?(10+Math.floor(_rnd()*50)):0);
+      const paymentEvent=PAYMENT_EVENTS[Math.floor(_rnd()*PAYMENT_EVENTS.length)];
+      const paymentStages=PAYMENT_STAGES[Math.floor(_rnd()*PAYMENT_STAGES.length)];
+      const paymentTerm=5+Math.floor(_rnd()*25);
+      const backingRequired=_rnd()<0.55;
+      const backingForm=backingRequired?(_rnd()<0.5?'деньги':'БГ или деньги'):null;
+      const applicationSecurityAmount=backingRequired?(1+Math.floor(_rnd()*4)):null;
+      const contractBackingForm=backingRequired?(_rnd()<0.5?'деньги':'БГ или деньги'):null;
+      const contractBackingSize=backingRequired?(5+Math.floor(_rnd()*15)):null;
+      const bankRestrictions=backingRequired?(_rnd()<0.6?'да':'нет'):null;
+      const bgValidityTerm=(backingRequired && contractBackingForm!=='деньги')?(30+Math.floor(_rnd()*150)):null;
+      const equivalentVal=orderType==='товары'?EQUIVALENT_VALS[Math.floor(_rnd()*3)]:null;
+      const experienceRequired=_rnd()<0.25;
+      const experienceFrom=experienceRequired?(_rnd()<0.6?EXPERIENCE_SRC_VALS[0]:EXPERIENCE_SRC_VALS[1]):null;
+      const nationalRegime=orderType==='товары'?(_rnd()<0.35?'да':'нет'):(_rnd()<0.1?'да':'нет');
+      const assessmentMethod=ASSESSMENT_VALS[_rnd()<0.7?0:1];
+      const isExperience=assessmentMethod==='не только цена' && _rnd()<0.5;
+      const howExperience=isExperience?(_rnd()<0.6?EXPERIENCE_SRC_VALS[0]:EXPERIENCE_SRC_VALS[1]):null;
+      const deliveryMode=DELIVERY_MODES[Math.floor(_rnd()*DELIVERY_MODES.length)];
+      const docsList=_rnd()<0.3?'да':'нет';
+      const priceOfferTerm=10+Math.floor(_rnd()*20);
+      const status=_rnd()<0.85?STATUS_VALS[0]:STATUS_VALS[1];
+      const method=METHOD_VALS[Math.floor(_rnd()*METHOD_VALS.length)];
+      const msp=_rnd()<0.4;
+      const evTxt={'подписание актов':'после подписания актов','приемка':'после приёмки','поставка':'после поставки','счет':'по счёту'}[paymentEvent]||'';
+      const pay = paymentType==='аванс' ? `аванс ${prepaidExpense}% предоплатой`
+        : paymentType==='комбо' ? `аванс ${prepaidExpense}%, остальное постоплатой ${evTxt}`
+        : paymentType==='отсрочка' ? `отсрочка платежа, ${paymentTerm} дн. ${evTxt}`
+        : `постоплата, ${paymentTerm} дн. ${evTxt}`;
+
+      PROCS.push({
+        id:genId(), st:'Прием заявок', lot:'Лот 1 из '+(1+Math.floor(_rnd()*2)),
+        n:title, cust, tt, place:city, nmck, pay,
+        end:fakeDate(days), days, urgent, tags:cat.tags, pubDays,
+        inn:'76'+String(1000000+Math.floor(_rnd()*8999999)),
+        orderType, paymentType, prepaidExpense, paymentEvent, paymentStages, paymentTerm,
+        backingRequired, backingForm, applicationSecurityAmount,
+        contractBackingForm, contractBackingSize, bankRestrictions, bgValidityTerm,
+        equivalentVal, experienceRequired, experienceFrom,
+        nationalRegime, assessmentMethod, isExperience, howExperience,
+        deliveryMode, docsList, priceOfferTerm, status, method, msp,
+      });
+    }
+  });
+});
+
+/* ---------- движок релевантности: запрос → ранжированный список процедур ----------
+   Без обращения к внешним ИИ-сервисам (см. обсуждение) — детерминированные
+   правила на JS: совпадение ключевых слов запроса с названием лота и тегами
+   категории, плюс реальная фильтрация по месту/цене/типу торгов/ИНН при
+   ответах на вопросы диалога (см. REAL_FILTER_PRED и addFilter). */
+const STOPWORDS=new Set(['для','или','под','что','как','это','также','либо','нужно','надо','хочу','нам','вам',
+ 'поставка','поставки','поставку','услуга','услуги','услугу','оказание','выполнение','работы','работ','нужны','нужен']);
+function tokenize(s){
+  /* от 4 символов и длиннее: короткие обрубки (3 буквы и меньше) слишком легко
+     случайно совпадают внутри произвольного длинного слова (например «бла»
+     внутри «областная») — это была реальная причина мусорных совпадений. */
+  return String(s||'').toLowerCase().replace(/[^a-zа-яё0-9\s]/gi,' ').split(/\s+/)
+    .filter(w=>w.length>3 && !STOPWORDS.has(w));
+}
+function stemMatch(a,b){
+  const n=Math.min(5,a.length,b.length);
+  return n>=4 && a.slice(0,n)===b.slice(0,n);
+}
+function matchScore(p, toks){
+  /* заказчик специально не участвует в сопоставлении — имена заказчиков
+     в демо-наборе случайны и только вносили шум, не сигнал релевантности.
+     Сравнение — по «стеблю» слова (первые буквы), чтобы «компьютеры»
+     находило тег «компьютер», «ноутбуки» — тег «ноутбук» и т.п. */
+  const hayToks = tokenize(p.n+' '+(p.tags||[]).join(' '));
+  let s=0;
+  toks.forEach(t=>{ if(hayToks.some(h=>stemMatch(h,t))) s++; });
+  return s;
+}
+function rankMatches(query){
+  const toks=tokenize(query);
+  if(!toks.length) return PROCS.map(p=>p.id);
+  const scored=PROCS.map(p=>({id:p.id, s:matchScore(p,toks)}));
+  const hasAny=scored.some(x=>x.s>0);
+  const pool=hasAny?scored.filter(x=>x.s>0):scored; /* ничего не совпало — не показываем пустоту, берём всё */
+  pool.sort((a,b)=>b.s-a.s);
+  return pool.map(x=>x.id);
+}
+/* Общий предикат для ЛЮБОГО числового поля (цена, %, дни): текст значения +
+   явно выбранный оператор («Меньше»/«Больше» в модалке критериев). \b (граница
+   слова) в JS-регулярках не годится для кириллицы — \w по умолчанию не
+   включает кириллические буквы, поэтому границу слова считаем обычным
+   поиском подстроки. Раньше оператор вообще не доходил до предиката, и,
+   например, «меньше 700000», набранное свободным текстом, не опознавалось
+   никак (ни «до», ни «от», ни «бол» не встречались в слове «меньше») и
+   попадало в дефолтную ветку «около ±40%» — то есть реально не фильтровало. */
+function numMatches(actual, val, op){
+  if(actual==null) return false;
+  const num=parseInt(String(val).replace(/\D/g,''),10);
+  if(!num) return true;
+  const v = String(val).toLowerCase();
+  const lessHint = op==='Меньше' || v.includes('до') || v.includes('мень') || v.includes('не более');
+  const moreHint = op==='Больше' || v.includes('от ') || v.includes('бол') || v.includes('не менее');
+  if(lessHint) return actual<=num;
+  if(moreHint) return actual>=num;
+  return Math.abs(actual-num) < Math.max(num*0.4, 5); /* «Равен» / «Диапазон» без второй границы — «около» */
+}
+function priceMatches(nmck, val, op){ return numMatches(nmck, val, op); }
+/* Общий предикат для полей да/нет: actual может быть boolean (true/false)
+   или уже строкой 'да'/'нет' — сравниваем с выбранным чипом без учёта регистра. */
+function boolMatch(actual, val){
+  const wantYes = /^да$/i.test(String(val).trim());
+  const wantNo = /^нет$/i.test(String(val).trim());
+  if(typeof actual==='boolean') return wantYes ? actual : (wantNo ? !actual : true);
+  if(actual==null) return false;
+  const actualYes = /^да$/i.test(String(actual).trim());
+  if(wantYes) return actualYes;
+  if(wantNo) return !actualYes;
+  return true;
+}
+/* Равенство строкового enum-поля без учёта регистра (payment_type, delivery_mode и т.п.) */
+function eqMatch(actual, val){
+  return actual!=null && String(actual).toLowerCase()===String(val).toLowerCase();
+}
+const REAL_FILTER_PRED={
+ /* --- заказчик / регион / место --- */
+ 'Место поставки': (p,val)=>p.place.toLowerCase().includes(String(val).split(',')[0].toLowerCase()),
+ /* Регион — не то же самое, что город доставки: сравниваем настоящий регион
+    (производный от города в адресе через CITY_REGION), а не подстроку города
+    с названием региона (см. комментарий у CITY_REGION — так было раньше и
+    не работало вообще ни для одного значения). */
+ 'Регион заказчика': (p,val)=>eqMatch(regionOf(p.place), val),
+ 'ИНН заказчика': (p,val)=>p.inn===String(val).replace(/\D/g,''),
+ 'Заказчик': (p,val)=>p.cust.toLowerCase().includes(String(val).toLowerCase()),
+
+ /* --- параметры закупки --- */
+ 'Тип торгов': (p,val)=>p.tt===val || (/коммерческ/i.test(val) && /коммерческ|частн/i.test(p.tt)),
+ 'Способ проведения': (p,val)=>eqMatch(p.method, val),
+ 'Статус торгов': (p,val)=>eqMatch(p.status, val),
+ 'Тип предмета': (p,val)=>eqMatch(p.orderType, val),
+ 'МСП / СОНО': (p,val)=>boolMatch(p.msp, val),
+ 'Категория ОКПД 2': (p,val)=>matchScore(p, tokenize(val))>0,
+ 'Классификатор строительных ресурсов (КСР)': (p,val)=>matchScore(p, tokenize(val))>0,
+
+ /* --- оплата --- */
+ 'Способ оплаты': (p,val)=>eqMatch(p.paymentType, val),
+ 'Аванс: процент': (p,val,op)=>numMatches(p.prepaidExpense, val, op),
+ 'Событие для оплаты': (p,val)=>eqMatch(p.paymentEvent, val),
+ 'Этапность платежей': (p,val)=>eqMatch(p.paymentStages, val),
+ 'Срок оплаты': (p,val,op)=>numMatches(p.paymentTerm, val, op),
+
+ /* --- обеспечение --- */
+ 'Наличие обеспечения заявки': (p,val)=>boolMatch(p.backingForm!==null, val),
+ 'Форма обеспечения заявки': (p,val)=>eqMatch(p.backingForm, val),
+ 'Размер обеспечения заявки': (p,val,op)=>numMatches(p.applicationSecurityAmount, val, op),
+ 'Требуется обеспечение исполнения': (p,val)=>boolMatch(p.backingRequired, val),
+ 'Форма обеспечения исполнения': (p,val)=>eqMatch(p.contractBackingForm, val),
+ 'Размер обеспечения исполнения': (p,val,op)=>numMatches(p.contractBackingSize, val, op),
+ 'Ограничения по банку': (p,val)=>boolMatch(p.bankRestrictions, val),
+ 'Срок действия БГ': (p,val,op)=>numMatches(p.bgValidityTerm, val, op),
+
+ /* --- опыт участника --- */
+ 'Опыт: требуется для допуска': (p,val)=>boolMatch(p.experienceRequired, val),
+ 'Опыт: чем подтверждать (допуск)': (p,val)=>eqMatch(p.experienceFrom, val),
+ 'Опыт: критерий оценки': (p,val)=>boolMatch(p.isExperience, val),
+ 'Опыт: чем подтверждать (оценка)': (p,val)=>eqMatch(p.howExperience, val),
+
+ /* --- условия исполнения --- */
+ 'Режим поставки': (p,val)=>eqMatch(p.deliveryMode, val),
+ 'Эквивалент': (p,val)=>eqMatch(p.equivalentVal, val),
+ 'Национальный режим': (p,val)=>boolMatch(p.nationalRegime, val),
+ 'Срок КП': (p,val,op)=>numMatches(p.priceOfferTerm, val, op),
+
+ /* --- сроки закупки --- */
+ 'Окончание приема заявок': (p,val,op)=>{
+   const d = parseInt(String(val).match(/\d+/)?.[0]||'0', 10);
+   if(!d) return true;
+   return op==='После' ? p.days>=d : p.days<=d;
+ },
+ 'Метод оценки': (p,val)=>eqMatch(p.assessmentMethod, val),
+
+ /* --- цена и документы --- */
+ 'НМЦ лота': (p,val,op)=>priceMatches(p.nmck,val,op),
+ 'Есть перечень обязательных документов': (p,val)=>boolMatch(p.docsList, val),
+};
+
+const ALLCRIT = [
+ {n:'Место поставки', v:'Ярославль, Москва', s:'Техническое задание.docx', u:true},
+ {n:'НМЦ лота', v:'400 000,99 ₽', s:'карточка процедуры', u:true},
+ {n:'Тип торгов', v:'Частные торги', s:'карточка процедуры', u:true},
+ {n:'Статус торгов', v:'Активные', s:'карточка процедуры', u:true},
+ {n:'ИНН заказчика', v:'7604000001', s:'карточка процедуры', u:false},
+ {n:'Окончание приёма заявок', v:'25 авг. 2026 в 09:00 мск', s:'карточка процедуры', u:false},
+ {n:'Порядок оплаты', v:'По факту получения товара', s:'Проект договора.docx', u:false},
+ {n:'Обеспечение заявки', v:'20 000 ₽', s:'карточка процедуры', u:false},
+ {n:'Срок поставки', v:'30 календарных дней', s:'Техническое задание.docx', u:false},
+ {n:'Национальный режим', v:'Не применяется', s:'Документация, п. 4.2', u:false},
+];
+
+/* Пустой пользователь: ни чатов, ни подборок изначально нет — они появляются
+   по ходу работы (новый запрос → чат в списке; «Сохранить» → подборка). */
+let CHATS = [];
+let FOLDERS_ACTIVE = [];
+let FOLDERS_ARCHIVE = [];
+function findFolder(n){ return FOLDERS_ACTIVE.find(f=>f.n===n) || FOLDERS_ARCHIVE.find(f=>f.n===n); }
+function folderCount(f){ return f.items.filter(i=>!i.archived).length; }
+const TEMPLATES = [
+ {n:'Коммерческие закупки', c:4, d:'Сегодня',
+  rules:[
+   {f:'Запрос', o:'Равен', v:'строительные материалы, плитка, сухие смеси'},
+   {f:'Тип торгов', o:'Равен', v:'Коммерческие закупки'},
+   {f:'Статус торгов', o:'Равен', v:'Активные'},
+   {f:'ИНН заказчика', o:'Равен', v:'00000000001'},
+  ]},
+];
+
+/* 8 блоков критериев, показываются по 4 за раз (2 страницы) — см. carousel()/carPage().
+   Состав полей и формулировки — из реального каталога критериев сервиса
+   («Критерии УПП»: Критерии.csv + Формализованные фильтры.csv + Варианты ответа.csv). */
+const BLOCKS = [
+ {id:'cust', n:'Заказчик', items:['Заказчик','ИНН заказчика','Регион заказчика']},
+ {id:'params', n:'Параметры закупки', items:['Тип торгов','Способ проведения','Статус торгов','Тип предмета','МСП / СОНО','Категория ОКПД 2']},
+ {id:'pay', n:'Оплата', items:['Способ оплаты','Аванс: процент','Событие для оплаты','Этапность платежей','Срок оплаты']},
+ {id:'backing', n:'Обеспечение', items:['Наличие обеспечения заявки','Форма обеспечения заявки','Размер обеспечения заявки',
+   'Требуется обеспечение исполнения','Форма обеспечения исполнения','Размер обеспечения исполнения','Ограничения по банку','Срок действия БГ']},
+ {id:'exp', n:'Опыт участника', items:['Опыт: требуется для допуска','Опыт: чем подтверждать (допуск)','Опыт: критерий оценки','Опыт: чем подтверждать (оценка)']},
+ {id:'exec', n:'Условия исполнения', items:['Место поставки','Режим поставки','Эквивалент','Национальный режим','Срок КП']},
+ {id:'dates', n:'Сроки закупки', items:['Дата публикации торгов','Дата начала приёма заявок','Окончание приема заявок','Метод оценки']},
+ {id:'price', n:'Цена и документы', items:['НМЦ лота','Есть перечень обязательных документов','Классификатор строительных ресурсов (КСР)']},
+];
+
+/* Каждое поле = один критерий: как его спросить в чате (q/d/chips) и как показать
+   его в редактируемом списке «Критерии подбора» (ops/values, delta — вес влияния на счётчик).
+   d — короткая подсказка человеку (НЕ инструкция для LLM-классификатора из CSV — та написана
+   для машинного разбора текста документации, а не как формулировка вопроса живому человеку). */
+/* Раньше это была красивая, но выдуманная цифра (10213), и весь счётчик
+   двигался по вручную заданным «весам» критериев (delta), никак не связанным
+   с реальной базой — отсюда и ощущение неполной достоверности. Теперь везде,
+   где показывается число процедур (в начале и после любого фильтра), это
+   настоящий подсчёт по реальной базе PROCS через движок relevantности
+   (rankMatches) и реальные предикаты (REAL_FILTER_PRED) — см. addFilter(),
+   критRunning(), recomputeWorkingSet(). */
+const BASE_TOTAL = PROCS.length;
+/* Порог «выборка уже достаточно узкая, можно предлагать результат» — доля
+   от реального размера базы, а не фиксированное число вроде 500 (которое
+   было привязано к старым сценарным цифрам и с реальным счётчиком не
+   имело смысла: реальная база меньше 500 целиком). */
+const GOOD_ENOUGH = Math.max(10, Math.round(BASE_TOTAL*0.15));
+const FIELD_DEFS = {
+ /* --- параметры закупки --- */
+ 'Тип торгов': {ops:['Равен'], values:['Коммерческие торги','44-ФЗ','223-ФЗ','615-ПП РФ'], delta:2000,
+  q:'Какие типы торгов вас интересуют? В каких торгах вы готовы участвовать?',
+  d:'Выберите источники и режимы проведения торгов: регулируемые закупки по 44-ФЗ и 223-ФЗ, коммерческие торги.',
+  chips:['Коммерческие торги','44-ФЗ','223-ФЗ','615-ПП РФ']},
+ 'Способ проведения': {ops:['Равен'], values:['Аукцион','Конкурс','Запрос котировок','Запрос предложений'], delta:900,
+  q:'Какой способ проведения торгов вам подходит?', d:'',
+  chips:['Аукцион','Конкурс','Запрос котировок','Запрос предложений']},
+ 'Статус торгов': {ops:['Равен'], values:['Активные','Архивные'], delta:4155,
+  q:'В каком статусе вы ищите процедуры?', d:'Активные, архивные.',
+  chips:['Активные','Архивные']},
+ 'Тип предмета': {ops:['Равен'], values:['Товары','Работы','Услуги'], delta:600,
+  q:'Что вам нужно — товары, работы или услуги?', d:'Тип предмета закупки по составу.',
+  chips:['Товары','Работы','Услуги']},
+ 'МСП / СОНО': {ops:['Равен'], values:['Да','Нет'], delta:300,
+  q:'Важно, чтобы закупка была ограничена участием МСП/СОНО?', d:'Малое и среднее предпринимательство / социально ориентированные НКО.',
+  chips:['Да','Нет']},
+ 'Категория ОКПД 2': {ops:['Равен','Содержит'], values:null, delta:250,
+  q:'Нужно уточнить по категории ОКПД 2?', d:'Например: «плитка керамическая», «компьютерная техника».',
+  chips:['Указать категорию']},
+
+ /* --- оплата --- */
+ 'Способ оплаты': {ops:['Равен'], values:['Аванс','Комбо','Отсрочка','Постоплата'], delta:500,
+  q:'Какой способ оплаты вам подходит?', d:'Аванс, постоплата, отсрочка или комбинация вариантов.',
+  chips:['Аванс','Комбо','Отсрочка','Постоплата']},
+ 'Аванс: процент': {ops:['Больше','Меньше','Равен'], values:null, delta:200,
+  q:'Какой минимальный процент аванса вам нужен?', d:'Доля предоплаты от суммы контракта, %.',
+  chips:['От 30%','От 50%','Не менее 100%']},
+ 'Событие для оплаты': {ops:['Равен'], values:['Подписание актов','Приемка','Поставка','Счет'], delta:200,
+  q:'От какого события должен отсчитываться срок оплаты?', d:'',
+  chips:['Подписание актов','Приемка','Поставка','Счет']},
+ 'Этапность платежей': {ops:['Равен'], values:['Единовременно','По этапам','График платежей'], delta:200,
+  q:'Как должны идти платежи — одним платежом или поэтапно?', d:'',
+  chips:['Единовременно','По этапам','График платежей']},
+ 'Срок оплаты': {ops:['Меньше','Больше','Равен'], values:null, delta:200,
+  q:'Есть ограничения по сроку оплаты после приёмки?', d:'В днях.',
+  chips:['Не более 10 дней','Не более 20 дней']},
+
+ /* --- обеспечение --- */
+ 'Наличие обеспечения заявки': {ops:['Равен'], values:['Да','Нет'], delta:250,
+  q:'Готовы вносить обеспечение заявки?', d:'',
+  chips:['Да','Нет']},
+ 'Форма обеспечения заявки': {ops:['Равен'], values:['Деньги','БГ или деньги'], delta:200,
+  q:'В какой форме готовы вносить обеспечение заявки?', d:'',
+  chips:['Деньги','БГ или деньги']},
+ 'Размер обеспечения заявки': {ops:['Меньше','Больше','Равен'], values:null, delta:150,
+  q:'Какой размер обеспечения заявки для вас приемлем?', d:'В процентах от НМЦК.',
+  chips:['До 1%','До 3%']},
+ 'Требуется обеспечение исполнения': {ops:['Равен'], values:['Да','Нет'], delta:300,
+  q:'Готовы предоставлять обеспечение исполнения контракта?', d:'',
+  chips:['Да','Нет']},
+ 'Форма обеспечения исполнения': {ops:['Равен'], values:['Деньги','БГ или деньги'], delta:200,
+  q:'В какой форме готовы вносить обеспечение исполнения?', d:'',
+  chips:['Деньги','БГ или деньги']},
+ 'Размер обеспечения исполнения': {ops:['Меньше','Больше','Равен'], values:null, delta:150,
+  q:'Какой размер обеспечения исполнения для вас приемлем?', d:'В процентах от НМЦК.',
+  chips:['До 10%','До 20%']},
+ 'Ограничения по банку': {ops:['Равен'], values:['Да','Нет'], delta:200,
+  q:'Важно отсутствие ограничений по перечню банков для гарантии?', d:'',
+  chips:['Да','Нет']},
+ 'Срок действия БГ': {ops:['Больше','Меньше'], values:null, delta:150,
+  q:'Есть требования к сроку действия банковской гарантии?', d:'В днях.',
+  chips:['Не менее 60 дней','Не менее 120 дней']},
+
+ /* --- опыт участника --- */
+ 'Опыт: требуется для допуска': {ops:['Равен'], values:['Да','Нет'], delta:300,
+  q:'Готовы подтверждать опыт для допуска к процедуре?', d:'',
+  chips:['Да','Нет']},
+ 'Опыт: чем подтверждать (допуск)': {ops:['Равен'], values:['Договоры из ЕИС','Любые договоры'], delta:150,
+  q:'Каким опытом готовы подтверждать допуск?', d:'',
+  chips:['Договоры из ЕИС','Любые договоры']},
+ 'Опыт: критерий оценки': {ops:['Равен'], values:['Да','Нет'], delta:200,
+  q:'Важно, чтобы опыт учитывался при оценке заявок?', d:'',
+  chips:['Да','Нет']},
+ 'Опыт: чем подтверждать (оценка)': {ops:['Равен'], values:['Договоры из ЕИС','Любые договоры'], delta:150,
+  q:'Каким опытом готовы подтверждать при оценке?', d:'',
+  chips:['Договоры из ЕИС','Любые договоры']},
+
+ /* --- условия исполнения --- */
+ 'Место поставки': {ops:['Равен','Содержит'], delta:1200,
+  values:Object.keys(CITY_REGION),
+  q:'Куда необходимо поставить товар?', d:'Ограничьте поиск по региону, городу или адресу поставки.',
+  chips:['Ярославль','Москва','Санкт-Петербург','Казань','Екатеринбург']},
+ 'Режим поставки': {ops:['Равен'], values:['Разово','По заявкам','Партиями'], delta:300,
+  q:'Как должна проходить поставка?', d:'Разово, по заявкам по мере потребности или партиями по графику.',
+  chips:['Разово','По заявкам','Партиями']},
+ 'Эквивалент': {ops:['Равен'], values:['Допускается','Не допускается','Условно'], delta:200,
+  q:'Важна возможность поставки эквивалента вместо указанного товара?', d:'',
+  chips:['Допускается','Не допускается','Условно']},
+ 'Национальный режим': {ops:['Равен'], values:['Да','Нет'], delta:400,
+  q:'Важны ограничения по национальному режиму (ПП РФ 1875)?', d:'',
+  chips:['Да','Нет']},
+ 'Срок КП': {ops:['Больше','Меньше'], values:null, delta:150,
+  q:'Есть ограничения по сроку действия ценового предложения?', d:'В днях.',
+  chips:['Не менее 15 дней','Не менее 30 дней']},
+
+ /* --- сроки закупки --- */
+ 'Дата публикации торгов': {ops:['Диапазон','До','После'], values:null, delta:700,
+  q:'Ограничить поиск по дате публикации процедуры?', d:'Укажите период публикации.',
+  chips:['За последние 7 дней','За последние 30 дней']},
+ 'Дата начала приёма заявок': {ops:['Диапазон','До','После'], values:null, delta:300,
+  q:'Есть ограничения по дате начала приёма заявок?', d:'',
+  chips:['С сегодняшнего дня','За последние 7 дней']},
+ 'Окончание приема заявок': {ops:['Диапазон','До','После'], values:null, delta:3556,
+  q:'Есть ли ограничения по дате приема предложений?', d:'',
+  chips:['Не позже 7 дней','Не позже 14 дней']},
+ 'Метод оценки': {ops:['Равен'], values:['Только цена','Не только цена'], delta:300,
+  q:'Как должен определяться победитель — только по цене или с учётом других критериев?', d:'',
+  chips:['Только цена','Не только цена']},
+
+ /* --- цена и документы --- */
+ 'НМЦ лота': {ops:['Равен','Диапазон','Больше','Меньше'], values:null, delta:800,
+  q:'Есть ли ограничения по НМЦ лота?', d:'',
+  chips:['До 500 000 ₽','До 1 000 000 ₽']},
+ 'Есть перечень обязательных документов': {ops:['Равен'], values:['Да','Нет'], delta:200,
+  q:'Готовы собирать расширенный пакет документов для участия?', d:'',
+  chips:['Да','Нет']},
+ 'Классификатор строительных ресурсов (КСР)': {ops:['Равен','Содержит'], values:null, delta:150,
+  q:'Нужно уточнить по классификатору строительных ресурсов (КСР)?', d:'',
+  chips:['Указать код КСР']},
+
+ /* --- заказчик --- */
+ 'Заказчик': {ops:['Равен','Содержит'], values:null, delta:350,
+  q:'Кто должен быть заказчиком закупки?', d:'Укажите наименование заказчика.',
+  chips:['Указать заказчика']},
+ 'Регион заказчика': {ops:['Равен'], values:Object.values(CITY_REGION), delta:200,
+  q:'В каком регионе находится заказчик?', d:'',
+  chips:['Ярославская обл.','г. Москва','г. Санкт-Петербург']},
+ 'ИНН заказчика': {ops:['Равен'], values:null, delta:500,
+  q:'Кто проводит закупку?', d:'Укажите ИНН заказчика.',
+  chips:['Ввести ИНН заказчика']},
+};
+function opsFor(fieldName){ const d=FIELD_DEFS[fieldName]; return d?d.ops:['Равен']; }
+
+/* =====================================================================
+   LLM: понимание свободных ответов в чате
+   =====================================================================
+   Идея та же, что и у REAL_FILTER_PRED: LLM ничего не решает про базу
+   PROCS и ничего в ней не меняет. Единственная её задача — по фразе,
+   которую человек напечатал своими словами, определить, КАКОЕ из уже
+   существующих допустимых значений поля он имел в виду (или извлечь
+   число под уже существующий оператор). Результат подаётся в тот же
+   addFilter(), что и обычный клик по чипу, — дальше работает неизменная
+   реальная фильтрация. Если LLM недоступна/ошиблась — честно показываем
+   причину и используем текст как есть (как было раньше), а не выдумываем
+   ответ молча.
+   Подсказки по значениям (LLM_FIELD_HINTS) — формулировки из «Критерии
+   УПП» (реальные правила разметки, присланные пользователем), а не
+   придуманные описания. */
+const LLM_CFG = {
+  baseUrl: 'https://proxy.llm.metamentor.pro',
+  apiKey: 'sk-e3QNUY0uLbwXXXctYN4g0g',
+  /* Roseltorg-Tags (специально настроенная под эту задачу модель, судя по
+     названию) пока лежит на прокси ("no healthy deployments"). Единственная
+     реально отвечающая под этим ключом модель — базовый qwen; с обычным
+     текстовым промптом она соскальзывала в написание деловых писем вместо
+     классификации, поэтому классификация идёт через forced tool calling
+     (см. llmExtract/buildLlmTool) — так она отвечает верно (проверено на
+     реальных вызовах). Когда Roseltorg-Tags оживёт — можно просто сменить
+     значение здесь, весь остальной код не трогаем. */
+  model: 'metamentor/qwen/qwen3.6-35b-a3b-fp8',
+  timeoutMs: 20000,
+};
+const LLM_FIELD_HINTS = {
+ 'Способ оплаты': { values: {
+   'Аванс':'Вся сумма оплачивается авансом (предоплата 100%).',
+   'Комбо':'Любая комбинация вариантов (аванс, постоплата, отсрочка) — например часть суммы авансом, а остальное постоплатой.',
+   'Отсрочка':'ТОЛЬКО явная отсрочка платежа ИЛИ оплата, отвязанная от приёмки: привязка к календарной дате («до 30 числа следующего месяца») или платёж с длительным переносом от иного события. Если оплата «в течение N дней после приёмки/акта» — это постоплата, НЕ отсрочка.',
+   'Постоплата':'Оплата всей суммы ПОСЛЕ приёмки/поставки, включая «оплату в течение N дней с даты подписания акта» — это типовой случай. Срок расчётов в днях после приёмки сам по себе НЕ делает это отсрочкой.'
+ }},
+ 'Событие для оплаты': { values: {
+   'Подписание актов':'Явно указано, что оплата после акта: КС-2/КС-3/УПД/ТОРГ-12/акт сдачи-приёмки.',
+   'Приемка':'После завершения приёмки/экспертизы, если конкретный документ не назван.',
+   'Поставка':'Оплата после факта поставки, без каких-либо документов.',
+   'Счет':'С даты выставления/получения счёта.'
+ }},
+ 'Этапность платежей': { values: {
+   'Единовременно':'Одна поставка/приёмка и один итоговый платёж.',
+   'По этапам':'Оплата привязана к этапам/актам/приёмкам, в т.ч. поставка по заявкам, партиями или ежемесячная оплата.',
+   'График платежей':'Даты оплаты заданы календарём и не зависят от событий приёмки/поставки.'
+ }},
+ 'Форма обеспечения заявки': { values: {
+   'Деньги':'Только денежные средства / спецсчёт.',
+   'БГ или деньги':'Банковская гарантия или деньги — на выбор участника.'
+ }},
+ 'Форма обеспечения исполнения': { values: {
+   'Деньги':'Только денежные средства.',
+   'БГ или деньги':'Независимая (банковская) гарантия или деньги на выбор.'
+ }},
+ 'Требуется обеспечение исполнения': { values: {
+   'Да':'Обеспечение исполнения контракта явно предусмотрено.',
+   'Нет':'Явно указано, что обеспечение не требуется/не устанавливается.'
+ }},
+ 'Ограничения по банку': { values: {
+   'Да':'Есть ограничения по перечню банков для гарантии/спецсчёта.',
+   'Нет':'Явно указано, что ограничений по банкам нет.'
+ }},
+ 'Тип предмета': { values: {
+   'Товары':'Поставка товаров.',
+   'Работы':'Выполнение работ: перевозки, строительство, монтаж.',
+   'Услуги':'Оказание услуг.'
+ }},
+ 'Эквивалент': { values: {
+   'Допускается':'Стандартная формулировка «или эквивалент» без условий.',
+   'Не допускается':'Явный запрет аналога («аналоги не допускаются»).',
+   'Условно':'Аналог допустим при соответствии характеристикам (типично для 44-ФЗ/223-ФЗ).'
+ }},
+ 'Режим поставки': { values: {
+   'Разово':'Разовая поставка/работа с единым сроком, без графика и без заявок.',
+   'По заявкам':'Объём и момент поставки определяются заявкой заказчика по мере потребности; топливные карты, отпуск «по требованию».',
+   'Партиями':'Только при явном согласованном графике поставок с конкретными датами и объёмами.'
+ }},
+ 'Опыт: требуется для допуска': { values: {
+   'Да':'Опыт — обязательное условие допуска.',
+   'Нет':'Явного требования опыта нет (значение по умолчанию).'
+ }},
+ 'Опыт: чем подтверждать (допуск)': { values: {
+   'Договоры из ЕИС':'Только из реестра ЕИС (zakupki.gov.ru).',
+   'Любые договоры':'Гос. и коммерческие договоры с документами.'
+ }},
+ 'Опыт: критерий оценки': { values: {
+   'Да':'Опыт входит в неценовые критерии оценки и влияет на баллы.',
+   'Нет':'Опыт не является критерием оценки (значение по умолчанию).'
+ }},
+ 'Опыт: чем подтверждать (оценка)': { values: {
+   'Договоры из ЕИС':'Только из реестра ЕИС.',
+   'Любые договоры':'Гос. и коммерческие договоры.'
+ }},
+ 'Метод оценки': { values: {
+   'Только цена':'Победитель по минимальной цене — аукцион, запрос котировок.',
+   'Не только цена':'Цена + неценовые критерии (опыт, квалификация, сроки) — конкурс, запрос предложений.'
+ }},
+ 'Национальный режим': { values: {
+   'Да':'Есть маркеры нацрежима: требование указать страну происхождения товара, ссылки на ПП РФ 1875/616/617/878/1289/1469, «третий/второй лишний», реестры РЭП/РРПП.',
+   'Нет':'Явно указано «национальный режим/ограничения не установлены».'
+ }},
+ 'Есть перечень обязательных документов': { values: {
+   'Да':'Есть отдельный перечень обязательных документов для участия.',
+   'Нет':'Перечня нет (значение по умолчанию).'
+ }},
+ 'Наличие обеспечения заявки': { values: {
+   'Да':'Обеспечение заявки предусмотрено.',
+   'Нет':'Обеспечение заявки не требуется.'
+ }},
+ 'МСП / СОНО': { values: {
+   'Да':'Закупка ограничена участием МСП/СОНО.',
+   'Нет':'Ограничения по МСП/СОНО нет.'
+ }}
+};
+const LLM_NUMERIC_NOTES = {
+ 'Аванс: процент':'Процент предоплаты от цены контракта, число 0–100.',
+ 'Срок оплаты':'Срок оплаты в днях: сколько дней даётся на оплату после наступления события оплаты.',
+ 'Срок КП':'Срок действия ценового предложения участника в днях.',
+ 'Срок действия БГ':'Минимальный срок действия банковской гарантии в днях.',
+ 'Размер обеспечения заявки':'Размер обеспечения заявки, в процентах от НМЦК.',
+ 'Размер обеспечения исполнения':'Размер обеспечения исполнения контракта, в процентах от НМЦК.',
+ 'НМЦ лота':'Начальная (максимальная) цена лота в рублях.'
+};
+/* Категории обработки поля: 'enum' — выбрать одно из FIELD_DEFS[name].values,
+   'numeric' — извлечь число под один из допустимых операторов, 'text' — поле
+   и так свободный текст (заказчик/ИНН/ОКПД2/КСР) — там LLM не нужна, там уже
+   работает содержательный substring-поиск по REAL_FILTER_PRED, а список
+   допустимых значений в принципе не задан. */
+function llmFieldKind(f){
+  if(Array.isArray(f.values)) return 'enum';
+  const numericOps=['Меньше','Больше','Диапазон','До','После'];
+  if(f.ops.some(o=>numericOps.includes(o))) return 'numeric';
+  return 'text';
+}
+function buildLlmSystemPrompt(name, f){
+  const hints = LLM_FIELD_HINTS[name];
+  if(Array.isArray(f.values)){
+    const lines = f.values.map(v=>{
+      const h = hints && hints.values && hints.values[v];
+      return `- "${v}"${h?' — '+h:''}`;
+    }).join('\n');
+    return ['Ты — модуль распознавания ответов в чате закупочной системы «Умный поиск».',
+      'Пользователю задан вопрос анкеты, он ответил свободным текстом. Определи, какому из допустимых вариантов соответствует его сообщение.',
+      `Вопрос: ${f.q}`,
+      'Допустимые варианты (выбери РОВНО один, дословно как написано ниже, включая регистр):',
+      lines,
+      'Если сообщение не описывает ни один из вариантов или пользователь уходит от ответа — верни null.',
+      'Ответь СТРОГО одним JSON-объектом без пояснений и без markdown: {"value": "<вариант дословно или null>", "confidence": <число 0..1>}'
+    ].join('\n');
+  }
+  const note = LLM_NUMERIC_NOTES[name] || '';
+  return ['Ты — модуль распознавания ответов в чате закупочной системы «Умный поиск».',
+    'Пользователю задан вопрос анкеты про числовой параметр, он ответил свободным текстом. Извлеки число и оператор сравнения.',
+    `Вопрос: ${f.q}`,
+    note ? `Пояснение: ${note}` : '',
+    `Допустимые операторы: ${f.ops.join(', ')}.`,
+    'Если в тексте нет распознаваемого числа — верни null вместо value.',
+    'Ответь СТРОГО одним JSON-объектом без пояснений и без markdown: {"value": <число или null>, "op": "<один из операторов выше>", "confidence": <число 0..1>}'
+  ].filter(Boolean).join('\n');
+}
+function extractJsonBlock(s){
+  if(!s) return null;
+  const m = s.match(/\{[\s\S]*\}/);
+  if(!m) return null;
+  try{ return JSON.parse(m[0]); }catch(e){ return null; }
+}
+function validateLlmResult(parsed, f){
+  if(!parsed || typeof parsed!=='object') return {ok:true, value:null};
+  /* recognized===false — модель сама сигнализирует «ничего из списка не
+     подходит», а не подставляет первое/единственное допустимое значение
+     просто потому, что схема требует его вернуть (см. buildLlmTool). */
+  if(parsed.recognized===false) return {ok:true, value:null, confidence:parsed.confidence};
+  if(Array.isArray(f.values)){
+    if(parsed.value==null) return {ok:true, value:null};
+    const hit = f.values.find(v=>v.toLowerCase()===String(parsed.value).trim().toLowerCase());
+    return {ok:true, value: hit || null, confidence: parsed.confidence};
+  }
+  if(parsed.value===null || parsed.value===undefined || parsed.value==='') return {ok:true, value:null};
+  const op = f.ops.includes(parsed.op) ? parsed.op : f.ops[0];
+  return {ok:true, value:String(parsed.value), op, confidence:parsed.confidence};
+}
+/* Схема function calling для конкретного поля. Раньше просили модель просто
+   «ответь JSON-ом» текстом — эта модель (metamentor/qwen через прокси)
+   систематически съезжала на генерацию делового письма вместо классификации,
+   независимо от формулировки промпта (проверено вживую несколькими заходами:
+   с рассуждениями, без них, с response_format:json_object — везде мимо
+   задачи). Форсированный вызов функции с enum-схемой параметров идёт по
+   отдельному пути в модели/раздатчике и на практике даёт верную
+   классификацию (проверено на реальных ответах прокси).
+   ВАЖНО: у enum-параметра schema.value всегда должен быть валидный вариант —
+   если допустимых значений мало (в пределе одно, как было у «Региона
+   заказчика»), форсированный tool_choice буквально не оставляет модели
+   другого выхода, кроме как вернуть этот единственный вариант, даже если он
+   не подходит («Москва» → «Ярославская обл.»). Поэтому добавлено отдельное
+   булево поле recognized — модель обязана явно сказать «не подходит ни один
+   вариант», а не подгонять ответ под то, что есть в схеме. */
+function buildLlmTool(name, f){
+  if(Array.isArray(f.values)){
+    return {type:'function', function:{
+      name:'classify_answer',
+      description:`Классифицирует ответ пользователя на вопрос «${f.q}» в одно из допустимых значений критерия «${name}». Если ответ не соответствует НИ ОДНОМУ варианту — recognized:false, значение value не важно.`,
+      parameters:{
+        type:'object',
+        properties:{
+          recognized:{type:'boolean', description:'true — ответ однозначно соответствует одному из допустимых вариантов; false — не соответствует ни одному.'},
+          value:{type:'string', enum:f.values, description:'Одно из допустимых значений, дословно (учитывается только при recognized=true).'},
+          confidence:{type:'number', description:'Уверенность классификации от 0 до 1.'}
+        },
+        required:['recognized','value','confidence']
+      }
+    }};
+  }
+  return {type:'function', function:{
+    name:'classify_answer',
+    description:`Извлекает числовое значение и оператор сравнения из ответа пользователя на вопрос «${f.q}» (критерий «${name}»). Если в тексте нет распознаваемого числа — recognized:false.`,
+    parameters:{
+      type:'object',
+      properties:{
+        recognized:{type:'boolean', description:'true — в тексте есть распознаваемое число; false — числа нет.'},
+        value:{type:'number', description:'Извлечённое число (учитывается только при recognized=true).'},
+        op:{type:'string', enum:f.ops, description:'Оператор сравнения.'},
+        confidence:{type:'number', description:'Уверенность от 0 до 1.'}
+      },
+      required:['recognized','value','op','confidence']
+    }
+  }};
+}
+async function llmExtract(text, name, f){
+  if(!LLM_CFG.apiKey) return {ok:false, reason:'API-ключ не настроен'};
+  const sys = buildLlmSystemPrompt(name, f) + '\nОбязательно используй функцию classify_answer для ответа — не отвечай обычным текстом.';
+  const tool = buildLlmTool(name, f);
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), LLM_CFG.timeoutMs);
+  try{
+    const res = await fetch(LLM_CFG.baseUrl.replace(/\/+$/,'')+'/v1/chat/completions', {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+LLM_CFG.apiKey, 'Content-Type':'application/json'},
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: LLM_CFG.model, temperature:0, max_tokens:250,
+        chat_template_kwargs:{enable_thinking:false},
+        tools:[tool], tool_choice:'auto',
+        messages:[{role:'system',content:sys},{role:'user',content:text}]
+      })
+    });
+    clearTimeout(timer);
+    if(!res.ok){
+      let detail='';
+      try{ const j=await res.json(); detail = j.error && j.error.message ? j.error.message : ''; }catch(e){}
+      return {ok:false, reason:`HTTP ${res.status}${detail?': '+detail:''}`};
+    }
+    const data = await res.json();
+    const msg = data && data.choices && data.choices[0] && data.choices[0].message;
+    const call = msg && msg.tool_calls && msg.tool_calls[0];
+    if(!call) return {ok:false, reason:'модель не вызвала функцию классификации'};
+    let parsed;
+    try{ parsed = JSON.parse(call.function.arguments); }catch(e){ return {ok:false, reason:'не удалось разобрать аргументы функции'}; }
+    return validateLlmResult(parsed, f);
+  }catch(err){
+    clearTimeout(timer);
+    return {ok:false, reason: err && err.name==='AbortError' ? 'превышено время ожидания' : ((err && err.message) || 'сетевая ошибка')};
+  }
+}
+
+/* =====================================================================
+   СОСТОЯНИЕ
+   ===================================================================== */
+let S = {};
+function reset(){
+  S = {
+    screen:'landing', tipOff:false, chat:[], busy:false, picked:[], animatedCount:0,
+    total:BASE_TOTAL, narrowing:false, navCol:false,
+    filters:[], usedItems:[], queue:[], qi:0, curField:null, history:[], carPage:0,
+    workingSet:PROCS.map(p=>p.id),
+    openDD:null, critModalOpen:false, curTplRules:null,
+    gridOpen:false, cardOpen:false, curProc:null, cardAnimId:null, checked:[],
+    openChats:true, openFold:false, sortField:'pub', sortDir:'desc', sortPendingField:null,
+    navScreen:null, folderTab:'active', curFolder:null,
+    curTemplate:null, templateEdit:false, folderItemsTab:'active', dcolAnimKey:null,
+    saveModalOpen:false, saveIds:[], saveNewName:'', saveSelectedFolder:null,
+    saveTplOpen:false, saveTplName:'',
+    folderCritModalOpen:false, folderFilters:[], folderOpenDD:null,
+  };
+}
+reset();
+const fmt = n => n.toLocaleString('ru-RU');
+const money = n => n===null ? null : n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽';
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* =====================================================================
+   РЕНДЕР
+   ===================================================================== */
+function render(){
+  const landEl = document.getElementById('landingLayer');
+  const appEl = document.querySelector('.app');
+  if(S.screen==='landing'){
+    appEl.style.display='none'; landEl.style.display='';
+    landEl.innerHTML = viewLanding();
+    return;
+  }
+  landEl.style.display='none'; appEl.style.display='';
+  renderNav();
+  const c = document.getElementById('cont');
+  if(S.navScreen==='folders'){ c.innerHTML = viewFolders(); }
+  else if(S.navScreen==='templates'){ c.innerHTML = viewTemplates(); }
+  else if(S.screen==='start'){ c.innerHTML = viewStart(); focusQ(); }
+  else if(S.screen==='onboard'){ c.innerHTML = viewOnboard(); }
+  else if(S.screen==='chat'){ c.innerHTML = viewWork(); scrollChat(); }
+  document.getElementById('nav').classList.toggle('col', !!S.navCol);
+  document.getElementById('modalLayer').innerHTML = S.critModalOpen ? renderCritModal()
+    : (S.saveTplOpen ? renderSaveTemplateModal()
+    : (S.folderCritModalOpen ? renderFolderCritModal() : ''));
+  document.getElementById('avatarMenu').innerHTML = S.openDD==='avatar' ? avatarMenu() : '';
+  document.getElementById('saveModalLayer').innerHTML = S.saveModalOpen ? renderSaveModal() : '';
+}
+function goOnboard(){ S.screen='onboard'; S.navScreen=null; S.openDD=null; render(); }
+function avatarMenu(){
+  return `<div class="ddmenu" style="right:0;left:auto;top:calc(100% + 8px);min-width:190px">
+    <div class="ddopt" onclick="event.stopPropagation();S.openDD=null;goOnboard()">📘 Онбординг</div>
+    <div class="ddopt" onclick="event.stopPropagation();S.openDD=null;toast('Профиль');render()">👤 Профиль</div>
+    <div class="ddopt" onclick="event.stopPropagation();S.openDD=null;toast('Выход из аккаунта');render()">↪ Выйти</div>
+  </div>`;
+}
+
+/* ---------- shared stable dropdown component ----------
+   Единственный источник состояния открытого меню — S.openDD.
+   Закрытие по клику вне обрабатывается ОДНИМ обработчиком на document
+   (см. конец файла), навешанным один раз, а не при каждом рендере —
+   именно повторное навешивание на каждый рендер и повторные закрытия
+   «в тот же клик» были причиной мерцания меню. */
+function toggleDD(id){ S.openDD = (S.openDD===id) ? null : id; render(); }
+function ddField(id, kind, scope, idx, value, options){
+  const open = S.openDD===id;
+  return `<span class="esel ${kind==='o'?'op':''}" data-dd="${id}">
+    <button type="button" class="ddtrig" onclick="event.stopPropagation();toggleDD('${id}')">
+      <span>${esc(value||'—')}</span><span style="color:var(--ink4)">▾</span></button>
+    ${open?`<div class="ddmenu">${options.map(o=>`<div class="ddopt ${o===value?'on':''}"
+      onclick="event.stopPropagation();selectDD('${scope}','${kind}',${idx},'${esc(o).replace(/'/g,"\\'")}')">${esc(o)}</div>`).join('')}</div>`:''}
+  </span>`;
+}
+/* scope различает, какой массив редактируется одним и тем же переиспользуемым
+   набором дропдаунов: 'chat' — S.filters (живой подбор), 'tpl' — черновик
+   редактирования шаблона, 'folder' — критерии внутри конкретной подборки. */
+function scopeArr(scope){
+  if(scope==='tpl') return S.curTplRules;
+  if(scope==='folder') return S.folderFilters;
+  return S.filters;
+}
+function valueField(id, scope, idx, r){
+  const def = FIELD_DEFS[r.f];
+  if(def && Array.isArray(def.values)) return ddField(id,'v',scope,idx,r.v,def.values);
+  const setter = `scopeArr('${scope}')[${idx}].v=this.value`;
+  return `<input class="esel eval" value="${esc(r.v)}" oninput="${setter}">`;
+}
+function selectDD(scope, kind, idx, value){
+  const arr = scopeArr(scope);
+  if(kind==='f'){ const def=FIELD_DEFS[value]; arr[idx] = {f:value, o:def.ops[0], v:def.values?def.values[0]:'', delta:def.delta}; }
+  else if(kind==='o'){ arr[idx].o = value; }
+  else if(kind==='v'){ arr[idx].v = value; }
+  S.openDD=null; render();
+}
+
+/* ---------- criteria (filters) list ---------- */
+/* Единая точка правды для «сколько процедур сейчас подходит» — прогоняем
+   реальную базу через движок relevantности (rankMatches) и затем через
+   настоящие предикаты (REAL_FILTER_PRED) для каждого применённого критерия
+   по порядку. Раньше счётчик двигался по вручную заданным «весам» (delta),
+   вообще не привязанным к реальной базе, — отсюда и ощущение бутафории.
+   Если конкретный шаг сужает список до 0 (в демо-базе не находится точного
+   совпадения, например по случайному ИНН) — не обнуляем список показа,
+   а оставляем прошлый шаг, чтобы грид не показывал пусто раньше времени. */
+function computeStages(){
+  let ws = rankMatches(S.query);
+  const stages = [];
+  S.filters.forEach(r=>{
+    const pred = REAL_FILTER_PRED[r.f];
+    if(pred){
+      const narrowed = ws.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, r.v, r.o); });
+      if(narrowed.length) ws = narrowed;
+    }
+    stages.push({filter:r, ws});
+  });
+  return stages;
+}
+function critRunning(){
+  let prev = rankMatches(S.query).length;
+  return computeStages().map(s=>{
+    const total = s.ws.length;
+    const delta = Math.max(0, prev-total);
+    prev = total;
+    return {...s.filter, total, delta};
+  });
+}
+function addFilter(f, o, v, delta){
+  S.filters.push({f, o, v, delta});
+  const pred = REAL_FILTER_PRED[f];
+  if(pred){
+    const narrowed = S.workingSet.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, v, o); });
+    if(narrowed.length) S.workingSet = narrowed;
+  }
+  S.total = S.workingSet.length;
+}
+function addFilterRow(){
+  const used = S.filters.map(r=>r.f);
+  const avail = Object.keys(FIELD_DEFS).find(f=>!used.includes(f)) || Object.keys(FIELD_DEFS)[0];
+  const def = FIELD_DEFS[avail];
+  S.filters.push({f:avail, o:def.ops[0], v:def.values?def.values[0]:'', delta:def.delta});
+  render();
+}
+function removeFilterRow(i){ S.filters.splice(i,1); render(); }
+function setFilterVal(i,v){ S.filters[i].v=v; } /* без render() — чтобы не сбрасывать фокус при вводе текста */
+function openCritModal(){ S.critModalOpen=true; S.openDD=null; render(); }
+function closeCritModal(){ S.critModalOpen=false; S.openDD=null; render(); }
+/* Модалка допускает произвольные правки (добавить/удалить/поменять любую
+   строку, не только последнюю), поэтому по «Применить» пересчитываем
+   список кандидатов с нуля от исходного запроса — прогоняя через реальные
+   предикаты ВСЕ текущие критерии по порядку, а не пытаясь инкрементально
+   поправить прежний S.workingSet. */
+function recomputeWorkingSet(){
+  const stages = computeStages();
+  S.workingSet = stages.length ? stages[stages.length-1].ws : rankMatches(S.query);
+}
+function applyCrit(){
+  recomputeWorkingSet();
+  S.total = S.workingSet.length;
+  closeCritModal();
+}
+function critRow(r,i){
+  const warn = r.total<=5;
+  return `<div class="crow ${warn?'warn':''}">
+    <span class="cidx">${i+1}.</span>
+    ${ddField('cf'+i,'f','chat',i,r.f,Object.keys(FIELD_DEFS))}
+    ${ddField('co'+i,'o','chat',i,r.o,opsFor(r.f))}
+    ${valueField('cv'+i,'chat',i,r)}
+    <span class="cdelta num">−${fmt(r.delta)}</span>
+    <span class="ctotal num">${fmt(r.total)}</span>
+    ${warn?'<span class="cwarn" title="Риск нулевой выборки">⚠</span>':''}
+    <button class="ctrash" onclick="removeFilterRow(${i})">🗑</button>
+  </div>`;
+}
+function renderCritModal(){
+  const rows = critRunning();
+  return `<div class="modalbg" onclick="if(event.target===this)closeCritModal()">
+    <div class="modalcard">
+      <div class="mhead"><span class="mtitle">Критерии подбора</span><button class="mx" onclick="closeCritModal()">×</button></div>
+      <div class="mrow0"><span>🔍</span><span class="mquery">Запрос: ${esc(S.query||'')}</span><span class="mcount num">${fmt(rankMatches(S.query).length)}</span></div>
+      ${rows.map((r,i)=>critRow(r,i)).join('')}
+      <div class="eadd" onclick="addFilterRow()">⊕ Добавить</div>
+      <div class="mfoot">
+        <button class="ecancel" style="margin-left:0" onclick="openSaveTemplateModal()">Сохранить критерии</button>
+        <span class="sp2"></span>
+        <button class="esave" onclick="applyCrit()">Применить</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- сохранение текущего набора критериев в шаблон ----------
+   Тот же набор проставленных значений фильтров (S.filters + сам запрос),
+   что уже используется в модалке «Критерии подбора» — сохраняем как шаблон
+   на странице «Шаблоны подбора», чтобы потом запустить с ним новый подбор
+   (см. startFromTemplate()). Доступно и из кебаба «⋮» в гриде, и из самой
+   модалки критериев («Сохранить критерии»). */
+function openSaveTemplateModal(){
+  S.saveTplName = (S.query||'Новый шаблон').trim();
+  S.saveTplOpen = true;
+  S.openDD = null;
+  render();
+}
+function closeSaveTemplateModal(){ S.saveTplOpen=false; render(); }
+function doSaveTemplate(){
+  const name = (S.saveTplName||'').trim();
+  if(!name){ toast('Введите название шаблона'); return; }
+  const rules = [{f:'Запрос', o:'Равен', v:S.query||''}, ...S.filters.map(r=>({f:r.f, o:r.o, v:r.v}))];
+  const existing = TEMPLATES.find(t=>t.n===name);
+  if(existing) existing.rules = rules;
+  else TEMPLATES.unshift({n:name, c:S.filters.length, d:'Сегодня', rules});
+  S.saveTplOpen = false;
+  toast(`Шаблон «${name}» сохранён`);
+  render();
+}
+function renderSaveTemplateModal(){
+  const rows = [{f:'Запрос', o:'Равен', v:S.query||''}, ...S.filters.map(r=>({f:r.f, o:r.o, v:r.v}))];
+  return `<div class="modalbg" onclick="if(event.target===this)closeSaveTemplateModal()">
+    <div class="modalcard" style="max-width:620px">
+      <div class="mhead"><span class="mtitle">Сохранить набор критериев</span>
+        <button class="mx" onclick="closeSaveTemplateModal()">×</button></div>
+      <div class="sffield on">
+        <div class="sflabel">Название шаблона <span style="color:var(--red)">*</span></div>
+        <div class="sfrow">
+          <input id="saveTplInput" value="${esc(S.saveTplName)}" oninput="S.saveTplName=this.value">
+          <button class="sfclear" onclick="S.saveTplName='';render();document.getElementById('saveTplInput').focus()">×</button>
+        </div>
+      </div>
+      <table class="ktab" style="margin-top:6px">
+        ${rows.map(r=>`<tr><td style="color:var(--ink3);width:35%">${esc(r.f)}</td><td style="color:var(--ink4);width:20%">${esc(r.o)}</td><td>${esc(r.v)}</td></tr>`).join('')}
+      </table>
+      <div class="sffoot" style="justify-content:flex-end">
+        <button class="sfbtn pri" style="flex:none;padding:11px 26px" onclick="doSaveTemplate()">Сохранить</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* render() вызывается на КАЖДЫЙ клик где угодно в приложении (галочка в гриде,
+   выбор чипа критерия и т.д.), и renderNav() раньше безусловно пересобирала
+   #navSc (список Чаты/Подборки/Шаблоны) при каждом таком вызове — то есть левое
+   меню целиком заменялось новым DOM-узлом на любой чужой клик, даже когда в
+   самом меню ничего не изменилось. Полная замена innerHTML на каждый чих и
+   создавала впечатление, что меню «само» открывается-закрывается. Пересобираем
+   его, только когда реально изменилось то, что на него влияет. */
+let _navSig = null;
+function renderNav(){
+  const sig = S.screen+'|'+S.navScreen+'|'+S.activeChat+'|'+S.openChats+'|'+S.total+'|'+CHATS.length;
+  if(sig===_navSig) return;
+  _navSig = sig;
+  const el=document.getElementById('navSc');
+  let h = `<button class="nnew" onclick="newChat()"><span>+</span><span>Новый чат</span></button>`;
+  h += `<button class="nrow ${!S.navScreen&&S.screen==='chat'?'on':''}" onclick="S.openChats=!S.openChats;render()">
+    <span class="ic">▤</span><span class="tx">Чаты</span>
+    <span class="chev ${S.openChats?'open':''}">▾</span></button>`;
+  if(S.openChats){
+    if(!CHATS.length){
+      h += `<div class="nsub"><div style="padding:6px 10px 6px 16px;font-size:12px;color:var(--ink4)">Пока нет чатов — начните с запроса выше</div></div>`;
+    } else {
+      h += `<div class="nsub">` + CHATS.map(c=>`
+        <button class="nsubrow ${S.screen==='chat'&&!S.navScreen&&c.id===S.activeChat?'on':''}" onclick="openChat('${c.id}')">
+          <span class="tx">${esc(c.n)}</span><span class="cnt num">${fmt(c.id===S.activeChat?S.total:c.c)}</span></button>`).join('') + `</div>`;
+    }
+  }
+  h += `<button class="nrow ${S.navScreen==='folders'?'on':''}" onclick="go('folders')">
+    <span class="ic">🔖</span><span class="tx">Подборки</span></button>`;
+  h += `<button class="nrow ${S.navScreen==='templates'?'on':''}" onclick="go('templates')">
+    <span class="ic">📄</span><span class="tx">Шаблоны подбора</span></button>`;
+  el.innerHTML = h;
+}
+
+/* ---------- LANDING: открытая часть Росэлторг (входная точка до онбординга) ---------- */
+function viewLanding(){
+  const cards = [
+    {c:'lci',ic:'🏢',t:'Квартиры и машиноместа в Москве'},
+    {ic:'✍️',t:'Электронная подпись'},
+    {ic:'🤖',t:'Чат-бот: обновлённый функционал'},
+    {ic:'🎥',t:'История одного предпринимателя'},
+    {ic:'◆',t:'Дизайн хакатон RLT-Hack'},
+  ];
+  return `<div class="land">
+    <div class="ltop">
+      <div class="llogo"><span class="lm">Р</span> РОСЭЛТОРГ</div>
+      <div class="lmenu">
+        <a>Частный Бизнес ↗</a><a>Закупки</a><a>Имущество</a><a>Услуги и сервисы</a>
+        <a>Удостоверяющий центр</a><a>Клиентам</a><a>О площадке</a>
+      </div>
+      <div class="licons">
+        <button class="tic">?</button>
+        <button class="tic">☆</button>
+        <button class="tic">◧</button>
+        <button class="tic">🔔<span class="dot">99+</span></button>
+        <button class="tic">🔔<span class="dot">99+</span></button>
+        <button class="tic">▦</button>
+      </div>
+      <div class="lava">КК</div>
+    </div>
+    <div class="lhero">
+      <div class="ltoggle">Все торги Росэлторг <span class="lsw"><i></i></span> Торги частного Бизнеса</div>
+      <h1>Больше чем закупки</h1>
+      <div class="ltabs"><button class="on">Закупки</button><button>Имущество</button></div>
+      <div class="lbanner" onclick="goOnboard()">
+        <div class="lbtxt"><b>✦ Умный поиск с ИИ</b><span>Находите закупки быстрее, работайте эффективнее</span></div>
+        <button class="lbtn" onclick="event.stopPropagation();goOnboard()">Попробовать</button>
+      </div>
+      <div class="lstd">Стандартный поиск</div>
+    </div>
+    <div class="lcards">
+      <div class="lcard big"><span class="lci">📋</span><div>Платформа для поиска заказов<br><span style="font-weight:400;opacity:.7">Найти клиента легко</span></div></div>
+      ${cards.map(c=>`<div class="lcard"><span class="lci">${c.ic}</span><div>${c.t}</div></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ---------- START ---------- */
+function viewStart(){
+  return `<div class="start"><div class="in">
+    <h1>Поможем подобрать лучшие закупки</h1>
+    <div class="qbox">
+      <input id="qIn" placeholder="Что вы хотите поставить или какую услугу оказать?"
+        onkeydown="if(event.key==='Enter')startS()">
+      <button class="sendb" onclick="startS()">↑</button>
+    </div>
+    ${S.tipOff?'':`<div class="tip">
+      <span>Совет: Для точного подбора укажите один конкретный товар, работу или услугу</span>
+      <button class="x" onclick="S.tipOff=true;render()">×</button></div>`}
+    <div class="exam">Например:
+      ${['Строительные материалы','Спецодежда','Офисная мебель','Ремонт помещений']
+        .map(x=>`<a onclick="pick('${x}')">${x}</a>`).join(', ')}</div>
+  </div></div>`;
+}
+function focusQ(){ const e=document.getElementById('qIn'); if(e) setTimeout(()=>e.focus(),60); }
+function pick(x){ document.getElementById('qIn').value=x; startS(); }
+
+function viewOnboard(){
+  return `<div class="onb"><div class="in">
+    <h1>Добро пожаловать!</h1>
+    <div class="lead">Умный поиск с ИИ помогает быстрее находить подходящие процедуры, уточнять критерии подбора и понимать, на чём закупки действительно стоит обратить внимание.</div>
+    <div style="font-size:13px;font-weight:700;margin-bottom:14px">Что умеет умный поиск с ИИ:</div>
+    <div class="feat"><div class="fic">📄</div><div><div class="ft">Анализ документации</div>
+      <div class="fd">ИИ анализирует закупочную документацию и ведёт поиск даже по неформализованным параметрам</div></div></div>
+    <div class="feat"><div class="fic">🔍</div><div><div class="ft">Подбор от общего к частному</div>
+      <div class="fd">Вы начинаете с простого запроса, ИИ уточняет только важные детали</div></div></div>
+    <div class="feat"><div class="fic">🛒</div><div><div class="ft">Понятная логика подбора</div>
+      <div class="fd">Каждый ответ превращается в критерий поиска. Вы всегда видите, как меняется подборка</div></div></div>
+    <button class="sendb" style="width:auto;border-radius:9px;padding:11px 20px;font-size:13.5px;font-weight:600;gap:8px;display:inline-flex;align-items:center" onclick="S.screen='start';render()">Начать подбор</button>
+  </div></div>`;
+}
+
+/* Чаты не предзаполнены — каждый чат в списке слева появляется только когда
+   пользователь реально отправил запрос. При переключении между чатами
+   сохраняем и восстанавливаем их состояние (вопросы, критерии, счётчик),
+   а не запускаем один и тот же сценарий заново поверх чужой истории. */
+function snapshotChat(){
+  if(!S.activeChat) return;
+  const entry = CHATS.find(c=>c.id===S.activeChat);
+  if(!entry) return;
+  entry.state = {
+    query:S.query, chat:S.chat, total:S.total, picked:S.picked,
+    filters:S.filters, usedItems:S.usedItems, queue:S.queue, qi:S.qi,
+    curField:S.curField, animatedCount:S.animatedCount, history:S.history, carPage:S.carPage,
+    workingSet:S.workingSet,
+  };
+  entry.c = S.total;
+}
+function startS(){
+  snapshotChat();
+  const v=(document.getElementById('qIn').value||'Поставляем строительные материалы. Плитку, клей, сухие смеси, краску.').trim();
+  const matched=rankMatches(v); /* настоящее число совпадений по базе — не сценарная цифра */
+  const chatId='c'+Date.now()+Math.floor(Math.random()*1000);
+  CHATS.unshift({id:chatId, n:v.length>22?v.slice(0,20)+'…':v, c:matched.length, state:null});
+  S.activeChat=chatId; S.navScreen=null;
+  S.screen='chat'; S.query=v; S.chat=[]; S.animatedCount=0; S.total=matched.length; S.picked=[];
+  S.filters=[]; S.usedItems=[]; S.queue=[]; S.qi=0; S.curField=null; S.history=[]; S.carPage=0;
+  S.workingSet=matched;
+  S.gridOpen=false; S.cardOpen=false; S.checked=[];
+  say('me', esc(v));
+  render();
+  botThink(()=>{
+    say('bot', `Понял. Ищу закупки по запросу «${esc(v)}».<br><span style="color:var(--ink3);font-size:12.5px">Найдено <b class="num">${fmt(matched.length)}</b> процедур</span><br><b>Выберите несколько критериев, по которым нужно уточнить поиск:</b>`, 'carousel');
+    render();
+  }, 900);
+}
+/* Запуск нового подбора по сохранённому шаблону критериев — тот же набор
+   проставленных значений фильтров, что был сохранён (см. doSaveTemplate()),
+   применяется сразу: запрос заново прогоняется через движок relevantности,
+   каждый критерий шаблона — через настоящий предикат (там, где он есть),
+   без повторных вопросов, сразу к результату. */
+function startFromTemplate(name){
+  const t = TEMPLATES.find(x=>x.n===name);
+  if(!t) return;
+  snapshotChat();
+  const queryRule = t.rules.find(r=>r.f==='Запрос');
+  const query = queryRule ? queryRule.v : '';
+  const filterRules = t.rules.filter(r=>r.f!=='Запрос');
+  const chatId='c'+Date.now()+Math.floor(Math.random()*1000);
+  S.navScreen=null; S.activeChat=chatId; S.screen='chat'; S.query=query;
+  S.chat=[]; S.animatedCount=0; S.picked=[];
+  S.filters=[]; S.usedItems=[]; S.queue=[]; S.qi=0; S.curField=null; S.history=[]; S.carPage=0;
+  S.gridOpen=false; S.cardOpen=false; S.checked=[];
+  let ws = rankMatches(query);
+  filterRules.forEach(r=>{
+    const def = FIELD_DEFS[r.f];
+    S.filters.push({f:r.f, o:r.o, v:r.v, delta: def?def.delta:200});
+    S.usedItems.push(r.f);
+    const pred = REAL_FILTER_PRED[r.f];
+    if(pred){
+      const narrowed = ws.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, r.v, r.o); });
+      if(narrowed.length) ws = narrowed;
+    }
+  });
+  S.workingSet = ws; S.total = ws.length;
+  CHATS.unshift({id:chatId, n:(query||name).length>22?(query||name).slice(0,20)+'…':(query||name), c:S.total, state:null});
+  say('me', `Начать подбор по шаблону «${esc(name)}»`);
+  render();
+  botThink(()=>{ finishGood(); }, 800);
+}
+function newChat(){
+  snapshotChat();
+  S.screen='start'; S.navScreen=null; S.activeChat=null; S.query='';
+  S.chat=[]; S.animatedCount=0; S.total=BASE_TOTAL; S.picked=[];
+  S.filters=[]; S.usedItems=[]; S.queue=[]; S.qi=0; S.curField=null; S.history=[]; S.carPage=0;
+  S.workingSet=PROCS.map(p=>p.id);
+  S.gridOpen=false; S.cardOpen=false; S.curProc=null; S.cardAnimId=null; S.checked=[];
+  S.critModalOpen=false; S.openDD=null;
+  render();
+}
+function openChat(id){
+  if(id===S.activeChat){ S.navScreen=null; render(); return; }
+  snapshotChat();
+  const entry = CHATS.find(c=>c.id===id);
+  S.navScreen=null; S.gridOpen=false; S.cardOpen=false; S.checked=[];
+  if(entry && entry.state){
+    Object.assign(S, entry.state);
+    S.activeChat=id; S.screen='chat';
+  } else {
+    S.activeChat=id; S.screen='chat'; S.chat=[]; S.history=[];
+    S.workingSet=rankMatches(entry?entry.n:'');
+    S.total=S.workingSet.length;
+  }
+  render();
+}
+function go(s){ S.navScreen=s; S.folderTab='active'; S.curFolder=null; S.curTemplate=null; S.templateEdit=false; render(); }
+
+/* ---------- WORK AREA ---------- */
+function viewWork(){
+  /* render() перестраивает innerHTML целиком при ЛЮБОМ клике (даже в гриде/карточке,
+     никак не связанном с чатом) — а значит и весь список сообщений S.chat собирался
+     заново каждый раз. У сообщений в CSS стоит анимация появления (.m{animation:fade}),
+     и она проигрывалась заново для ВСЕХ прошлых сообщений на каждый чих — это и было
+     похоже на то, что что-то само открывается/закрывается. Проигрываем анимацию только
+     для сообщений, которых ещё не было на экране (индекс >= S.animatedCount). */
+  const already = S.animatedCount||0;
+  const chatHtml = S.chat.map((m,i)=>mRender(m, i>=already)).join('');
+  S.animatedCount = S.chat.length;
+  let h = `<div class="chatcol ${S.gridOpen?'narrow':''}">
+    <div class="chatsc" id="chatSc">${chatHtml}${S.busy?typing():''}</div>
+    <div class="chatin"><div class="tabox">
+      <textarea id="freeIn" placeholder="Введите сообщение"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();freeT()}"></textarea>
+      <div class="tarow"><span class="sp"></span><button class="sendb" onclick="freeT()">↑</button></div>
+    </div></div>
+  </div>`;
+  if(!S.gridOpen) h += viewRail();
+  if(S.gridOpen) h += viewGrid();
+  if(S.cardOpen) h += viewCard();
+  return h;
+}
+function mRender(m, fresh){
+  const st = fresh ? '' : ' style="animation:none"';
+  if(m.who==='me') return `<div class="m me"${st}><div class="b">${m.h}</div></div>`;
+  let extra='';
+  if(m.x==='carousel') extra=carousel();
+  else if(m.x==='question') extra=questionChips();
+  else if(m.x==='cta') extra=ctaCard();
+  else if(m.x==='more') extra=moreBlock();
+  else if(m.x==='zero'){
+    const lastF = S.filters[S.filters.length-1];
+    extra = `<div class="chiprow">
+      ${lastF?`<button class="chip" onclick="removeCriterion()">Убрать критерий «${esc(lastF.f)}»</button>`:''}
+      <button class="chip" onclick="keepArchive()">Оставить архивные процедуры</button>
+    </div>`;
+  }
+  return `<div class="m bot"${st}><div class="b">${m.h}${extra}</div></div>`;
+}
+function typing(){ return `<div class="typing"><span class="tdots"><i></i><i></i><i></i></span>Анализирую запрос…</div>`; }
+function say(who,h,x){ S.chat.push({who,h,x:x||null}); }
+function botThink(fn,ms){ S.busy=true; render(); setTimeout(()=>{ S.busy=false; fn(); }, ms||800); }
+function scrollChat(){ const e=document.getElementById('chatSc'); if(e) e.scrollTop=e.scrollHeight; }
+
+/* ---------- CAROUSEL: выбор блоков/критериев ----------
+   Порядок клика по чипам = S.picked (обычный массив, порядок вставки).
+   Он же становится: (1) порядком нумерации на самих чипах и
+   (2) порядком, в котором дальше задаются вопросы (S.queue).
+   Блоков всего 8, показываем по 4 (2 страницы) — постранично через
+   S.carPage, а не листанием одного бесконечного ряда, чтобы 4-й и 5-й
+   блок не оказывались одновременно и на первой, и на второй странице. */
+/* По макету из Figma — 3 блока на страницу (было 4), а стрелки листания
+   и кнопка «Продолжить» — в одну строку внизу: стрелки вместе слева,
+   кнопка справа (раньше стрелки стояли по бокам от карточек, а кнопка
+   вообще пропадала, пока ничего не выбрано, — теперь видна всегда, просто
+   неактивна). */
+const CAR_PAGE_SIZE = 3;
+const CAR_PAGES = Math.ceil(BLOCKS.length/CAR_PAGE_SIZE);
+function carPage(delta){
+  S.carPage = Math.max(0, Math.min(CAR_PAGES-1, (S.carPage||0)+delta));
+  render();
+}
+function carousel(){
+  const page = S.carPage||0;
+  const pageBlocks = BLOCKS.slice(page*CAR_PAGE_SIZE, page*CAR_PAGE_SIZE+CAR_PAGE_SIZE);
+  const cards = pageBlocks.map(b=>{
+    const items = b.items.filter(it=>!S.usedItems.includes(it));
+    const body = items.length ? items.map(it=>{
+        const key=b.id+'|'+it; const idx=S.picked.indexOf(key); const sel=idx>=0;
+        return `<button class="cchip ${sel?'sel':''}" onclick="togglePick('${key}')">${sel?`<span style="opacity:.8;margin-right:5px">${idx+1}</span>`:''}${it}</button>`;
+      }).join('') : `<div style="font-size:11.5px;color:var(--ink4)">Учтено ✓</div>`;
+    return `<div class="bcard"><div class="bt">${b.n}</div><div class="bl">${body}</div></div>`;
+  }).join('');
+  const canContinue = S.picked.length>0;
+  return `<div class="carw">
+    <div class="carrow">${cards}</div>
+    <div class="carfoot">
+      <div class="carnavbtns">
+        <button class="carnb" onclick="carPage(-1)" ${page<=0?'disabled':''}>‹</button>
+        <button class="carnb" onclick="carPage(1)" ${page>=CAR_PAGES-1?'disabled':''}>›</button>
+      </div>
+      <button class="sendb ${canContinue?'':'muted'}" style="width:auto;border-radius:8px;padding:8px 16px;font-size:12.5px;font-weight:600"
+        ${canContinue?'onclick="confirmPick()"':'disabled'}>Продолжить</button>
+    </div>
+  </div>`;
+}
+function togglePick(key){ const i=S.picked.indexOf(key); i>=0?S.picked.splice(i,1):S.picked.push(key); render(); }
+function confirmPick(){
+  const names = S.picked.map(k=>k.split('|')[1]);
+  say('me', names.join(', '));
+  const last=S.chat.filter(m=>m.x==='carousel').pop(); if(last) last.x=null;
+  S.queue = names.filter(n=>FIELD_DEFS[n]);
+  names.forEach(n=>{ if(!S.usedItems.includes(n)) S.usedItems.push(n); });
+  S.qi = 0;
+  S.picked=[]; render();
+  botThink(()=>{ nextQuestion(); }, 800);
+}
+function nextQuestion(){
+  if(S.qi < S.queue.length) askQuestion(); else afterQueue();
+}
+function askQuestion(){
+  const name = S.queue[S.qi]; const f = FIELD_DEFS[name];
+  S.curField = name;
+  say('bot', `<b>${f.q}</b>${f.d?`<div style="margin-top:4px;color:var(--ink3);font-size:12.5px">${f.d}</div>`:''}`, 'question');
+  render();
+}
+function questionChips(){
+  const f = FIELD_DEFS[S.curField]; if(!f) return '';
+  const opts=[...f.chips,'Не важно','Пропустить вопрос','К списку вопросов'];
+  const back = S.history.length ? `<button class="chip back" onclick="goBack()">← Назад</button>` : '';
+  /* «Указать заказчика» / «Ввести ИНН заказчика» / «Указать категорию» и т.п. —
+     не готовый ответ, а подсказка «впишите значение в поле ниже». Раньше клик
+     по ней вёл себя как обычный чип и подставлял этот текст-подсказку в
+     качестве значения фильтра — человек ничего не написал, а фильтр как будто
+     появлялся. Такие чипы теперь не отвечают на вопрос, а просто передают
+     фокус в поле ввода, чтобы человек напечатал реальное значение сам. */
+  return `<div class="chiprow">${back}${opts.map(c=>{
+    const isPrompt = /^(Указать|Ввести)\s/i.test(c);
+    if(isPrompt) return `<button class="chip prompt" onclick="focusFreeInput()">✎ ${c}</button>`;
+    return `<button class="chip ${/Пропустить|К списку|Не важно/.test(c)?'muted':''}" onclick="answerQ('${esc(c)}')">${c}</button>`;
+  }).join('')}</div>`;
+}
+function focusFreeInput(){
+  const el = document.getElementById('freeIn');
+  if(el){ el.focus(); }
+}
+function answerQ(val){
+  const name = S.curField; const f = FIELD_DEFS[name];
+  /* снимок «до ответа» — по нему кнопка «Назад» откатывает 1-3 шага подряд */
+  S.history.push({qi:S.qi, filtersLen:S.filters.length, usedLen:S.usedItems.length, chatLen:S.chat.length});
+  say('me', val);
+  const last=S.chat.filter(m=>m.x==='question').pop(); if(last) last.x=null;
+  render();
+  if(val==='К списку вопросов'){
+    S.qi = S.queue.length;
+    return botThink(()=>{ afterQueue(); }, 700);
+  }
+  if(val!=='Не важно' && val!=='Пропустить вопрос'){
+    addFilter(name, f.ops[0], val, f.delta);
+    checkZero();
+    if(S.total<=5) return; // checkZero уже показал сообщение — дальше не идём
+  }
+  advanceAfterAnswer();
+}
+function advanceAfterAnswer(){ S.qi++; botThink(()=>{ nextQuestion(); }, 850); }
+/* Свободный текстовый ответ на вопрос анкеты (в отличие от клика по чипу —
+   answerQ() — здесь заранее неизвестно, какому значению соответствует текст).
+   Для полей со свободным текстом (заказчик/ИНН/ОКПД2/КСР) LLM не нужна —
+   там и так работает содержательный substring-поиск, число подходящих
+   вариантов не ограничено. Для enum- и числовых полей — обращаемся к LLM,
+   с честным отказом на текст «как есть», если сервис недоступен. */
+async function freeAnswerToQuestion(text){
+  const name = S.curField; const f = FIELD_DEFS[name];
+  const kind = llmFieldKind(f);
+  S.history.push({qi:S.qi, filtersLen:S.filters.length, usedLen:S.usedItems.length, chatLen:S.chat.length});
+  say('me', esc(text));
+  const last=S.chat.filter(m=>m.x==='question').pop(); if(last) last.x=null;
+  if(kind==='text'){
+    render();
+    addFilter(name, f.ops[0], text, f.delta);
+    checkZero();
+    if(S.total<=5) return;
+    advanceAfterAnswer();
+    return;
+  }
+  S.busy = true; render();
+  const result = await llmExtract(text, name, f);
+  S.busy = false;
+  applyFreeAnswer(name, f, text, result);
+}
+function applyFreeAnswer(name, f, rawText, result){
+  if(result.ok && result.value!=null && result.value!==''){
+    const op = result.op || f.ops[0];
+    const noteOp = (op!==f.ops[0]) ? ` · ${esc(op)}` : '';
+    say('bot', `Понял «${esc(rawText)}» как: <b>${esc(String(result.value))}</b>${noteOp}`);
+    addFilter(name, op, result.value, f.delta);
+    render();
+    checkZero();
+    if(S.total<=5) return;
+    advanceAfterAnswer();
+    return;
+  }
+  /* Раньше при нераспознанном ответе сырой текст всё равно подставлялся как
+     «значение» критерия (addFilter(name, f.ops[0], rawText, ...)) — для полей
+     с закрытым списком вариантов (enum) это создавало фильтр со значением,
+     которого в принципе не может быть у процедуры («Москва» как «Регион
+     заказчика», когда LLM не смогла её сопоставить), и REAL_FILTER_PRED либо
+     молча ни с чем не совпадал, либо совпадал случайно. Для enum-полей текст
+     из ответа пользователя в фильтр больше НЕ попадает — вместо этого
+     переспрашиваем и снова показываем те же варианты (тот же вопрос остаётся
+     открытым, S.qi не двигается). Для числовых — тоже не подставляем текст
+     "как есть" вместо числа, а просим уточнить. */
+  const reason = !result.ok
+    ? `сервис распознавания недоступен (${esc(result.reason||'ошибка сети')})`
+    : 'не удалось сопоставить ответ ни с одним из допустимых вариантов';
+  const kind = llmFieldKind(f);
+  if(kind==='enum'){
+    say('bot', `Не смог распознать «${esc(rawText)}» — ${reason}.<br>Выберите один из вариантов ниже или переформулируйте ответ.`, 'question');
+  } else {
+    say('bot', `Не смог извлечь число из «${esc(rawText)}» — ${reason}.<br>Уточните значение или выберите готовый вариант ниже.`, 'question');
+  }
+  render();
+}
+function goBack(){
+  if(!S.history.length) return;
+  const cp = S.history.pop();
+  S.qi = cp.qi;
+  S.filters.length = cp.filtersLen; S.usedItems.length = cp.usedLen; S.chat.length = cp.chatLen;
+  /* S.workingSet тоже нужно откатить, а не только S.filters — иначе после
+     «Назад» список кандидатов остаётся сужен по уже отменённому ответу.
+     Пересчитываем с нуля от исходного запроса по оставшимся критериям. */
+  recomputeWorkingSet();
+  S.total = S.workingSet.length;
+  const lastMsg = S.chat[S.chat.length-1];
+  if(lastMsg) lastMsg.x = 'question';
+  S.curField = S.queue[cp.qi];
+  S.animatedCount = Math.min(S.animatedCount, S.chat.length);
+  S.busy = false;
+  render();
+}
+function afterQueue(){
+  if(S.total<=5) return showLow();
+  /* Раньше переход к результату («вот ваша подборка», кнопка-CTA в чате)
+     срабатывал только когда у пользователя кончались блоки критериев для
+     выбора — независимо от того, насколько на самом деле узкая выборка.
+     Теперь довольно и реального небольшого числа процедур (GOOD_ENOUGH,
+     доля от размера базы) — тогда предлагаем перейти к результату сразу,
+     не дожидаясь, пока пользователь исчерпает все возможные критерии. */
+  const remaining = BLOCKS.some(b=>b.items.some(it=>!S.usedItems.includes(it)));
+  if(S.total<=GOOD_ENOUGH || !remaining){
+    finishGood();
+  } else {
+    S.carPage=0;
+    say('bot', `Понял. Выборка процедур всё ещё большая.<br><span style="color:var(--ink3);font-size:12.5px">Найдено <b class="num">${fmt(S.total)}</b> процедур</span><br><b>Уточните ещё несколько критериев из списка</b>`, 'carousel');
+    render();
+  }
+}
+/* Проверяем обнуление сразу после каждого ответа (а не только когда пройдены
+   все вопросы очереди) — чтобы не заставлять доклик��вать оставшиеся вопросы,
+   если выборка уже обнулилась, скажем, на 7-м из 10. */
+function checkZero(){
+  if(S.total<=5) botThink(()=>{ showLow(); }, 700);
+}
+/* Реальное число архивных процедур по текущему запросу (без учёта фильтра
+   «Статус торгов», если он уже сузил список до активных) — раньше здесь
+   было захардкожено 3124, никак не связано с базой. */
+function realArchiveCount(){
+  return rankMatches(S.query).filter(id=>{
+    const p=PROCS.find(x=>x.id===id); return p && p.status==='Архивные';
+  }).length;
+}
+function showLow(){
+  const lastF = S.filters[S.filters.length-1];
+  const archN = realArchiveCount();
+  say('bot', `Найдено <b class="num">${fmt(S.total)}</b> процедур.<br>В данный момент почти нет торгов, отвечающих на сто процентов вашим критериям.${lastF?`<br>Критерий «${esc(lastF.f)}» сильно сократил результаты выборки.`:''}<br>Есть <b class="num">${fmt(archN)}</b> архивных процедур по данным критериям за последние 24 месяца.`, 'zero');
+  render();
+}
+function removeCriterion(){
+  const rem = S.filters.pop();
+  recomputeWorkingSet();
+  S.total = S.workingSet.length;
+  say('me', rem?`Убрать критерий «${rem.f}»`:'Убрать последний критерий');
+  const last=S.chat.filter(m=>m.x==='zero').pop(); if(last) last.x=null;
+  render();
+  botThink(()=>{ finishGood(); }, 850);
+}
+function keepArchive(){
+  say('me', 'Оставить архивные процедуры');
+  const last=S.chat.filter(m=>m.x==='zero').pop(); if(last) last.x=null;
+  render();
+  botThink(()=>{
+    const archIds = rankMatches(S.query).filter(id=>{
+      const p=PROCS.find(x=>x.id===id); return p && p.status==='Архивные';
+    });
+    if(archIds.length) S.workingSet = archIds;
+    S.total = S.workingSet.length;
+    say('bot', `Хорошо, показываю и архивные процедуры, подходящие под ваши критерии.`, 'cta');
+    render();
+  }, 700);
+}
+function finishGood(){
+  say('bot', `Готово. Я собрал подборку по вашим требованиям.`, 'cta');
+  render();
+  setTimeout(()=>botThink(()=>{ say('bot','Хотите сделать подборку точнее? Я могу дополнительно проверить:','more'); render(); }, 700), 100);
+}
+function ctaCard(){
+  /* Показывает то же число, что увидит человек, кликнув дальше в грид
+     (sortedResultProcs().length), а не «красивый» нарративный S.total —
+     иначе обещание в чате и факт в гриде расходятся (ровно так и было
+     с «10 213» наверху при реальных 20 строках в списке). */
+  const q=(S.query||'').trim(); const short=q.length>28?q.slice(0,26)+'…':q;
+  /* Раньше отменить критерий или вернуться на шаг назад можно было, только
+     пока открыт сам вопрос анкеты (чип «← Назад» жил внутри questionChips()) —
+     как только появлялся CTA, кнопка «Назад» пропадала совсем, а отменить
+     конкретный уже применённый критерий можно было только через модалку
+     «Критерии подбора». Теперь оба действия доступны прямо под CTA. */
+  const chips = S.filters.map((r,i)=>`<span class="critchip">${esc(r.f)}: ${esc(String(r.v))}<button class="critx" onclick="event.stopPropagation();removeAppliedFilter(${i})" title="Убрать критерий">✕</button></span>`).join('');
+  const backBtn = S.history.length ? `<button class="chip back" onclick="event.stopPropagation();goBack()">← Назад</button>` : '';
+  return `<div class="ctac" onclick="openGrid()">
+    <div class="ic">🔍</div><div class="tx">${esc(short||'Подборка')}</div><div class="cn num">${fmt(sortedResultProcs().length)}</div></div>
+    ${(chips||backBtn)?`<div class="critchips">${chips}${backBtn}</div>`:''}`;
+}
+/* Отмена конкретного (не обязательно последнего) уже применённого критерия
+   прямо из чата, без открытия модалки. Как и removeCriterion() (сценарий
+   «выборка обнулилась») — снимаем критерий и заново прогоняем реальные
+   предикаты по остальным (recomputeWorkingSet), а не подгоняем счётчик руками. */
+function removeAppliedFilter(i){
+  const rem = S.filters[i];
+  if(!rem) return;
+  S.filters.splice(i,1);
+  const ui = S.usedItems.indexOf(rem.f);
+  if(ui>=0) S.usedItems.splice(ui,1);
+  recomputeWorkingSet();
+  S.total = S.workingSet.length;
+  say('me', `Убрать критерий «${rem.f}»`);
+  render();
+  botThink(()=>{ if(S.total<=5) showLow(); else finishGood(); }, 700);
+}
+function freeT(){
+  const el=document.getElementById('freeIn'); const t=(el.value||'').trim(); if(!t||S.busy) return;
+  el.value='';
+  const pendingQ = S.chat.filter(m=>m.x==='question').pop();
+  if(pendingQ) return freeAnswerToQuestion(t);
+  say('me', esc(t));
+  render();
+  botThink(()=>{ say('bot','Учёл. Продолжим уточнение через блоки критериев ниже.'); render(); }, 700);
+}
+function moreBlock(){
+  return `<ul class="blist">${['требования к участнику;','заказчиков;','критерии оценки;','национальный режим;','ТЗ и спецификацию;','наличие эквивалента;','ОКПД2 / КСР;','сроки поставки;','срок действия КП.']
+    .map(x=>`<li>${x}</li>`).join('')}</ul>`;
+}
+
+
+/* ---------- RAIL: Ход подбора ---------- */
+/* Пороги — доля от реального размера базы (BASE_TOTAL = PROCS.length), а не
+   абсолютные тысячи: раньше «Уточнение» включалось при total<=1000, что при
+   настоящем счётчике (максимум ~190) означало «всегда», то есть статус
+   был бы бессмысленным как только счётчик стал реальным. */
+function statusInfo(){
+  if(S.total<=5) return {label:'Требует внимания', color:'var(--red)', pct:92};
+  if(S.total<=BASE_TOTAL*0.3) return {label:'Уточнение', color:'var(--amber)', pct:70};
+  if(S.filters.length>0) return {label:'Начало подбора', color:'var(--rust)', pct:Math.min(30, 8+S.filters.length*6)};
+  return {label:'Начало подбора', color:'var(--rust)', pct:8};
+}
+function hasMoreCriteria(){ return BLOCKS.some(b=>b.items.some(it=>!S.usedItems.includes(it))); }
+function manualRefine(){
+  if(S.busy || !hasMoreCriteria()) return;
+  S.carPage=0;
+  say('bot', `Хорошо, вот ещё критерии, которыми можно уточнить подборку:`, 'carousel');
+  render();
+  scrollChat();
+}
+function viewRail(){
+  const st = statusInfo();
+  const step1ok = S.usedItems.length>=3;
+  const step2ok = S.total<=1000;
+  return `<div class="rp"><div class="pcard">
+    <div class="t">Ход подбора</div>
+    <div class="prow2"><span class="l">Статус</span><span class="v" style="color:${st.color}">${st.label}</span></div>
+    <div class="pbar"><i style="width:${st.pct}%;background:${st.color}"></i></div>
+    <div class="plist" style="margin-top:12px">
+      <div class="pitem ${step1ok?'ok':''}"><span class="nm">${step1ok?'✓':'1'}</span>Параметры закупки</div>
+      <div class="pitem ${step2ok?'ok':''}"><span class="nm">${step2ok?'✓':'2'}</span>Сроки и графики</div>
+    </div>
+    <div class="pcrit" onclick="openCritModal()">Критерии подбора: <b class="num">${S.filters.length}</b></div>
+    ${hasMoreCriteria()?`<div class="pcrit" onclick="manualRefine()">⊕ Уточнить ещё критерии</div>`:''}
+    <div class="pcta" onclick="openGrid()">${fmt(S.total)} процедур</div>
+  </div></div>`;
+}
+
+/* ---------- отражение ответов диалога в выдаче ----------
+   То, что человек указал в диалоге, влияет ТОЛЬКО на выбор процедур
+   (S.workingSet), а не на содержимое самих карточек — см. displayProc()
+   ниже. filterVal/filterOp здесь больше не нужны и намеренно убраны. */
+/* База процедур (PROCS) неизменна и никогда не редактируется под запрос —
+   что человек ввёл в диалоге, влияет ТОЛЬКО на то, какие процедуры попадают
+   в S.workingSet (см. rankMatches/REAL_FILTER_PRED/addFilter), а не на то,
+   что написано в самих карточках. Раньше здесь была «косметическая»
+   подмена: если у конкретной позиции реального совпадения с ответом не
+   было, в карточку вместо настоящих данных подставлялся сырой текст
+   ответа (например, введённое наименование заказчика) — то есть база как
+   будто редактировалась под пользователя. Это и создавало путаницу.
+   displayProc() теперь ничего не подменяет — только готовит служебное
+   nmckDisplay (текстовое представление цены) для рендера. */
+function displayProc(p){
+  return { ...p, nmckDisplay: p.nmck===null ? null : money(p.nmck) };
+}
+
+/* ---------- GRID ---------- */
+/* Поля сортировки — по скриншоту макета. Двухуровневое меню: сначала поле,
+   потом направление (по возрастанию / по убыванию) — оба списка видны
+   одновременно, второй справа от первого, выбор направления применяет
+   сортировку сразу. null-значения (например, нет обеспечения) всегда в
+   конце списка независимо от направления. */
+const SORT_FIELDS={
+ nmck:{label:'НМЦК', get:p=>p.nmck},
+ end:{label:'Дата приема предложений', get:p=>p.days},
+ pub:{label:'Дата публикации', get:p=>p.pubDays},
+ region:{label:'Регион', get:p=>p.place},
+ cust:{label:'Заказчик', get:p=>p.cust},
+ backing:{label:'Размер обеспечения', get:p=>p.contractBackingSize},
+ advance:{label:'Размер аванса', get:p=>p.prepaidExpense},
+};
+function openGrid(){ S.gridOpen=true; render(); }
+function sortArr(arr){
+  const def = SORT_FIELDS[S.sortField] || SORT_FIELDS.pub;
+  const dir = S.sortDir==='asc' ? 1 : -1;
+  arr.sort((a,b)=>{
+    const av=def.get(a), bv=def.get(b);
+    const aNull = av===null || av===undefined;
+    const bNull = bv===null || bv===undefined;
+    if(aNull && bNull) return 0;
+    if(aNull) return 1; /* без значения — всегда в конце */
+    if(bNull) return -1;
+    if(typeof av==='string') return dir*av.localeCompare(bv,'ru');
+    return dir*(av-bv);
+  });
+  return arr;
+}
+/* Используется для папок/шаблонов — сортировка по ВСЕМ процедурам без привязки к запросу текущего чата. */
+function sortedProcs(){ return sortArr(PROCS.slice()); }
+/* Используется в живом гриде выдачи — только то, что реально относится к текущему запросу
+   и прошедшим фильтрам (см. rankMatches/REAL_FILTER_PRED), а не весь каталог. */
+function sortedResultProcs(){
+  const ids = S.workingSet && S.workingSet.length ? S.workingSet : PROCS.map(p=>p.id);
+  const arr = ids.map(id=>PROCS.find(p=>p.id===id)).filter(Boolean);
+  return sortArr(arr);
+}
+function sortLabel(){
+  const def = SORT_FIELDS[S.sortField] || SORT_FIELDS.pub;
+  return `${def.label} (${S.sortDir==='asc'?'по возр.':'по убыв.'})`;
+}
+function toggleSortMenu(){
+  if(S.openDD==='sort'){ S.openDD=null; S.sortPendingField=null; }
+  else { S.openDD='sort'; S.sortPendingField=null; }
+  render();
+}
+function pickSortField(key){ S.sortPendingField=key; render(); }
+function pickSortDir(dir){
+  S.sortField=S.sortPendingField; S.sortDir=dir;
+  S.sortPendingField=null; S.openDD=null; render();
+}
+function sortBtn(){
+  const open = S.openDD==='sort';
+  return `<span class="gbtn ddwrap" data-dd="sort" style="padding:0;position:relative">
+    <button type="button" style="padding:6px 11px;display:flex;align-items:center;gap:6px" onclick="event.stopPropagation();toggleSortMenu()">↕ ${sortLabel()}</button>
+    ${open?`<div class="ddmenu">${Object.keys(SORT_FIELDS).map(k=>`<div class="ddopt ${(S.sortPendingField?S.sortPendingField===k:S.sortField===k)?'on':''}"
+      onclick="event.stopPropagation();pickSortField('${k}')">${SORT_FIELDS[k].label}</div>`).join('')}</div>`:''}
+    ${S.sortPendingField?`<div class="ddmenu" style="left:calc(100% + 8px);top:0;min-width:170px">
+      <div class="ddopt" onclick="event.stopPropagation();pickSortDir('asc')">по возрастанию</div>
+      <div class="ddopt" onclick="event.stopPropagation();pickSortDir('desc')">по убыванию</div>
+    </div>`:''}
+  </span>`;
+}
+function selectAllVisible(){ S.checked = sortedResultProcs().map(p=>p.id); render(); }
+function gridKebab(){
+  const open = S.openDD==='gridkebab';
+  return `<span class="ddwrap" data-dd="gridkebab" style="position:relative">
+    <button class="kb" onclick="event.stopPropagation();toggleDD('gridkebab')">⋮</button>
+    ${open?`<div class="ddmenu" style="right:0;left:auto;min-width:210px">
+      <div class="ddopt" onclick="event.stopPropagation();S.openDD=null;selectAllVisible()">✓ Выбрать все</div>
+      <div class="ddopt" onclick="event.stopPropagation();S.openDD=null;openSaveTemplateModal()">📄 Сохранить критерии</div>
+    </div>`:''}
+  </span>`;
+}
+function viewGrid(){
+  const list = sortedResultProcs();
+  return `<div class="gcol">
+    <div class="gh">
+      <div class="gh1">
+        <button class="x" onclick="S.gridOpen=false;S.cardOpen=false;S.cardAnimId=null;render()">×</button>
+        <span class="t">${esc((S.query||'Подборка').trim())}</span><span class="c num">${fmt(list.length)}</span>
+        ${gridKebab()}
+      </div>
+      <div class="gh2">
+        ${sortBtn()}
+        <button class="gbtn" onclick="openCritModal()">☰ Критерии<span class="bdg num">${S.filters.length}</span></button>
+      </div>
+    </div>
+    <div class="gsc">
+      ${list.map(p=>prow(p)).join('')}
+    </div>
+    ${S.checked.length?bulkLive():''}
+  </div>`;
+}
+function prow(p0, ctx){
+  const p = displayProc(p0);
+  const on=S.curProc&&S.curProc.id===p.id;
+  const ck=S.checked.includes(p.id);
+  const long=p.n.length>58;
+  const nm=long?esc(p.n.slice(0,56))+'…':esc(p.n);
+  const kebab = ctx ? `<span class="ddwrap" data-dd="fk-${p.id}" style="position:relative;margin-left:auto" onclick="event.stopPropagation()">
+      <button class="fkb" onclick="event.stopPropagation();toggleDD('fk-${p.id}')">⋮</button>
+      ${S.openDD==='fk-'+p.id?`<div class="ddmenu" style="right:0;left:auto;min-width:200px">
+        ${ctx.archived
+          ?`<div class="ddopt" onclick="event.stopPropagation();restoreFromArchive('${esc(ctx.folder)}','${p.id}')">↩ Вернуть из архива</div>`
+          :`<div class="ddopt" onclick="event.stopPropagation();archiveItem('${esc(ctx.folder)}','${p.id}')">📦 В архив</div>`}
+        <div class="ddopt" style="color:var(--red)" onclick="event.stopPropagation();removeFromFolder('${esc(ctx.folder)}','${p.id}')">🗑 Удалить из подборки</div>
+      </div>`:''}
+    </span>` : '';
+  return `<div class="prow ${on?'on':''}" onclick="openCard('${p.id}')">
+    <span class="cb ${ck?'on':''}" onclick="event.stopPropagation();chk('${p.id}')">${ck?'✓':''}</span>
+    <div class="pin">
+      <div class="pr1"><div class="nm">${nm}</div>
+        <div class="pz ${p.nmckDisplay===null?'no':''}">${p.nmckDisplay===null?'НМЦ не указано':esc(p.nmckDisplay)}</div>${kebab}</div>
+      <div class="pr2"><span>${esc(p.cust)}</span><span>·</span><span>${esc(p.tt)}</span><span>·</span><span>${esc(p.place)}</span></div>
+      <div class="pr3">
+        ${p.urgent?'<span class="urg">Успейте подать предложение</span>':`<span class="days">${p.days<1?Math.round(p.days*24)+' ч.':p.days+' дн.'}</span>`}
+      </div>
+    </div>
+  </div>`;
+}
+function chk(id){ const i=S.checked.indexOf(id); i>=0?S.checked.splice(i,1):S.checked.push(id); render(); }
+
+/* ---------- сохранение процедур в подборку (папку) ----------
+   Всплывающее окно вместо выпадающего меню: заголовок с числом выбранных
+   процедур, поле «Новая подборка» с предзаполненным именем вида
+   «Запрос_ДД_ММ_ГГГГ» и список уже существующих подборок как альтернативных
+   получателей — клик по подборке выбирает её (переключатель: повторный клик
+   снимает выбор и возвращает к созданию новой). */
+function defaultFolderName(){
+  const q = (S.query||'Подборка').trim().replace(/\s+/g,' ');
+  const short = q.length>40 ? q.slice(0,40) : q;
+  const d = new Date();
+  const pad = n=>String(n).padStart(2,'0');
+  return `${short}_${pad(d.getDate())}_${pad(d.getMonth()+1)}_${d.getFullYear()}`;
+}
+function openSaveModal(ids){
+  if(!ids || !ids.length) return;
+  S.saveIds = ids.slice();
+  S.saveSelectedFolder = null;
+  S.saveNewName = defaultFolderName();
+  S.saveModalOpen = true;
+  S.openDD = null;
+  render();
+}
+function closeSaveModal(){ S.saveModalOpen=false; render(); }
+function selectSaveFolder(name){ S.saveSelectedFolder = (S.saveSelectedFolder===name?null:name); render(); }
+function doSave(navigate){
+  let target = S.saveSelectedFolder;
+  if(!target){
+    const name = (S.saveNewName||'').trim();
+    if(!name){ toast('Введите название подборки'); return; }
+    if(!findFolder(name)) FOLDERS_ACTIVE.unshift({n:name, d:'Сегодня', items:[]});
+    target = name;
+  }
+  saveToFolder(target, S.saveIds, /*silent*/true);
+  S.saveModalOpen = false;
+  if(navigate){ S.navScreen='folders'; openFolder(target); }
+  else { toast(`Сохранено в «${target}»`); render(); }
+}
+function renderSaveModal(){
+  const usingExisting = !!S.saveSelectedFolder;
+  return `<div class="modalbg" onclick="if(event.target===this)closeSaveModal()">
+    <div class="modalcard" style="max-width:560px">
+      <div class="mhead"><span class="mtitle">Сохранить процедуры <span class="num" style="color:var(--ink3)">${S.saveIds.length}</span></span>
+        <button class="mx" onclick="closeSaveModal()">×</button></div>
+      <div class="sffield ${usingExisting?'':'on'}">
+        <div class="sflabel">Новая подборка <span style="color:var(--red)">*</span></div>
+        <div class="sfrow">
+          <input id="saveNameInput" value="${esc(S.saveNewName)}" oninput="S.saveNewName=this.value" ${usingExisting?'disabled':''}>
+          <button class="sfclear" onclick="S.saveNewName='';render();document.getElementById('saveNameInput').focus()">×</button>
+        </div>
+      </div>
+      ${FOLDERS_ACTIVE.length?`<div class="sflist">
+        ${FOLDERS_ACTIVE.map(f=>`<div class="sfitem ${S.saveSelectedFolder===f.n?'on':''}" onclick="selectSaveFolder('${esc(f.n)}')">
+          <div class="sfi">📁</div>
+          <div class="sftx">${esc(f.n)}</div>
+          <div class="sfcnt num">🔖 ${folderCount(f)}</div>
+          <div class="sfdate">${f.d}</div>
+        </div>`).join('')}
+      </div>`:''}
+      <div class="sffoot">
+        <button class="sfbtn" onclick="doSave(false)">Сохранить</button>
+        <button class="sfbtn pri" onclick="doSave(true)">Сохранить и перейти</button>
+      </div>
+    </div>
+  </div>`;
+}
+function saveToFolder(folderName, ids, silent){
+  const f = findFolder(folderName);
+  let added=0;
+  ids.forEach(id=>{ if(!f.items.some(i=>i.id===id)){ f.items.push({id, archived:false}); added++; } });
+  S.openDD=null; S.checked=[];
+  if(!silent) toast(added ? `Сохранено в «${folderName}» (${added})` : `Уже есть в «${folderName}»`);
+  render();
+}
+function archiveItem(folderName,id){ const f=findFolder(folderName); const it=f.items.find(i=>i.id===id); if(it) it.archived=true; S.openDD=null; render(); }
+function restoreFromArchive(folderName,id){ const f=findFolder(folderName); const it=f.items.find(i=>i.id===id); if(it) it.archived=false; S.openDD=null; render(); }
+function removeFromFolder(folderName,id){ const f=findFolder(folderName); f.items=f.items.filter(i=>i.id!==id); S.checked=S.checked.filter(x=>x!==id); S.openDD=null; render(); }
+
+function bulkLive(){
+  return `<div class="bulkbar">
+    <span class="bicon pri" onclick="openSaveModal(S.checked)">🔖 Сохранить</span>
+    <span class="bicon" onclick="toast('Отправка коллеге')">↗</span>
+    <span class="bicon" onclick="toast('Выгрузка файла')">⬇</span>
+    <span class="sp"></span><span class="bcount num">Выбрано ${S.checked.length}</span>
+    <span class="bx" onclick="S.checked=[];render()">×</span>
+  </div>`;
+}
+function bulkFolder(){
+  return `<div class="bulkbar">
+    <span class="bicon" onclick="S.checked.slice().forEach(id=>archiveItem(S.curFolder,id));S.checked=[];render()">📦 В архив</span>
+    <span class="bicon" onclick="toast('Выгрузка')">⬇ Выгрузить</span>
+    <span class="bicon" onclick="toast('Отправка')">↗ Отправить</span>
+    <span class="bicon" onclick="S.checked.slice().forEach(id=>removeFromFolder(S.curFolder,id));S.checked=[];render()">🗑 Удалить</span>
+    <span class="sp"></span><span class="bcount num">Выбрано ${S.checked.length}</span>
+    <span class="bx" onclick="S.checked=[];render()">×</span>
+  </div>`;
+}
+
+/* ---------- CARD ----------
+   Вся страница перерисовывается на любой чих (render() перестраивает
+   весь innerHTML), поэтому если карточка уже открыта, а пользователь
+   кликнул на что-то совсем другое (галочку в другой строке, сортировку
+   и т.п.), .ccol создаётся заново — и раньше это КАЖДЫЙ РАЗ заново
+   проигрывало анимацию появления (opacity 0→1, сдвиг), из-за чего
+   уже открытая панель визуально «мигала», будто закрылась и открылась
+   снова, хотя по смыслу ничего не менялось. Проигрываем анимацию
+   только при первом открытии карточки или при переключении на другую
+   процедуру — не при каждой перерисовке. */
+function openCard(id){ S.curProc=PROCS.find(p=>p.id===id); S.cardOpen=true; render(); }
+function closeCard(){ S.cardOpen=false; S.cardAnimId=null; render(); }
+function viewCard(){
+  const p=displayProc(S.curProc);
+  const fresh = S.cardAnimId !== p.id;
+  S.cardAnimId = p.id;
+  return `<div class="ccol" style="${fresh?'':'animation:none'}">
+    <div class="ch1">
+      <span class="regn">✅ ${p.id}</span><span class="tagok">${p.st}</span><span class="lot">${p.lot}</span>
+      <span class="sp"></span><button class="dh x" onclick="closeCard()">×</button>
+    </div>
+    <div class="csc">
+      <div class="ctit">${esc(p.n)}</div>
+      <a class="ccust" onclick="toast('Открывается новой вкладкой')">${esc(p.cust)}</a>
+      <table class="ktab">
+        <tr><td>НМЦ лота</td><td class="num">${p.nmckDisplay===null?'не указано':esc(p.nmckDisplay)}</td></tr>
+        <tr><td>Оплата</td><td>${esc(p.pay)}</td></tr>
+        <tr><td>Место поставки</td><td>${esc(p.place.split(',')[0])}</td></tr>
+        <tr><td>Окончание приёма заявок</td><td>${esc(p.end)}</td></tr>
+      </table>
+      <a class="morea" onclick="toast('Открывается новой вкладкой в торговой секции')">Подробнее ↗</a>
+      <div class="docbox">
+        <div class="dt">Критерии из документации <span class="spark">✦</span></div>
+        <ul><li>Место поставки: ${esc(p.place)}. Источник: <a onclick="toast('Открывается документ')">Техническое задание.docx</a></li></ul>
+        <span class="allcrit" onclick="openM_allcrit()">Все критерии из документации →</span>
+      </div>
+    </div>
+    <div class="cfoot">
+      <button class="bigb" style="flex:1" onclick="openSaveModal(['${p.id}'])">🔖 Сохранить</button>
+      <button class="sqb" onclick="toast('Отправка коллеге')">↗</button>
+    </div>
+  </div>`;
+}
+function openM_allcrit(){
+  const isDoc = s => /\.docx?$|Документация/i.test(s);
+  const rows = ALLCRIT.map(c=>`<tr><td style="padding:8px 0;border-bottom:1px solid var(--line2)">${c.n}</td>
+    <td style="padding:8px 0;border-bottom:1px solid var(--line2);font-weight:600">${c.v}</td>
+    <td style="padding:8px 0;border-bottom:1px solid var(--line2);font-size:12px">${isDoc(c.s)
+      ?`<a style="color:var(--blue);cursor:pointer" onclick="toast('Открывается документ')">${c.s}</a>`
+      :`<span style="color:var(--ink4)">${c.s}</span>`}</td>
+    <td style="padding:8px 0;border-bottom:1px solid var(--line2)">${c.u?'<span style="color:var(--green);font-weight:600;font-size:12px">участвовал</span>':'<span style="color:var(--ink4);font-size:12px">не участвовал</span>'}</td></tr>`).join('');
+  const html = `<div style="position:fixed;inset:0;background:rgba(27,30,43,.42);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px" onclick="if(event.target===this)this.remove()">
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:640px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(27,30,43,.3)">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center">
+        <span style="font-size:15px;font-weight:700;flex:1">Все критерии из документации</span>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="font-size:18px;color:var(--ink3)">×</button></div>
+      <div style="padding:16px 20px;overflow-y:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="font-size:10.5px;text-transform:uppercase;color:var(--ink4);text-align:left">
+            <th style="padding-bottom:8px">Критерий</th><th>Значение</th><th>Источник</th><th>В подборе</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div></div>`;
+  const d=document.createElement('div'); d.innerHTML=html; document.body.appendChild(d.firstElementChild);
+}
+
+/* ---------- FOLDERS ---------- */
+function viewFolders(){
+  if(S.curFolder){
+    /* Клик по строке в prow() везде одинаково вызывает openCard() → ставит
+       S.cardOpen/S.curProc — но в отличие от viewWork() (основной поиск,
+       где после грида добавляется viewCard(), если S.cardOpen) здесь карточка
+       никогда не подключалась к разметке: состояние менялось, а на экране
+       ничего не появлялось. Теперь то же самое поведение, что и в гриде. */
+    return `<div style="display:flex;flex-direction:row;overflow:hidden;flex:1;min-width:0">
+      ${viewFoldersList(true)}
+      ${viewFolderGrid()}
+      ${S.cardOpen?viewCard():''}
+    </div>`;
+  }
+  return viewFoldersList(false);
+}
+function createFolder(){
+  const name=(prompt('Название новой папки:','Новая подборка')||'').trim();
+  if(!name) return;
+  FOLDERS_ACTIVE.unshift({n:name, d:'Сегодня', items:[]});
+  S.folderTab='active'; render();
+}
+function viewFoldersList(narrow){
+  const list = S.folderTab==='active'?FOLDERS_ACTIVE:FOLDERS_ARCHIVE;
+  return `<div class="fpage" style="${narrow?'width:420px;flex:none;border-right:1px solid var(--line)':''}">
+    <div class="fph"><h1>Подборки</h1><button class="fbtn" onclick="createFolder()">⊕ Создать папку</button></div>
+    <div class="ftabs">
+      <div class="ftab ${S.folderTab==='active'?'on':''}" onclick="S.folderTab='active';render()">Активные <span class="num">${FOLDERS_ACTIVE.length}</span></div>
+      <div class="ftab ${S.folderTab==='archive'?'on':''}" onclick="S.folderTab='archive';render()">Архив <span class="num">${FOLDERS_ARCHIVE.length}</span></div>
+    </div>
+    <div class="flist">
+      ${S.folderTab==='archive'?`<div class="infob">ℹ️ Сюда автоматически переносятся подборки, в которых у процедур истёк срок подачи заявок — они остаются доступны для просмотра, но уже не участвуют в активном подборе.</div>`:''}
+      ${!list.length?`<div style="padding:30px 6px;color:var(--ink4);font-size:13px;text-align:center">${S.folderTab==='active'?'Пока нет ни одной подборки — сохраните процедуру из карточки или списка результатов':'В архиве подборок пусто'}</div>`:''}
+      ${list.map(f=>`<div class="frow ${S.curFolder===f.n?'on':''}" onclick="openFolder('${esc(f.n)}')">
+        <div class="fi">📁</div>
+        <div class="ftx"><div class="fn">${esc(f.n)}</div><div class="fmeta">🔖 ${folderCount(f)}</div></div>
+        <div class="fdate">${f.d}</div><button class="fkb" onclick="event.stopPropagation()">⋮</button>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+function openFolder(n){ S.curFolder=n; S.folderItemsTab='active'; S.checked=[]; S.folderFilters=[]; S.cardOpen=false; S.curProc=null; S.cardAnimId=null; render(); }
+/* ---------- фильтрация и критерии ВНУТРИ подборки ----------
+   Те же дропдауны поля/оператора/значения (ddField/valueField/selectDD,
+   scope='folder' → S.folderFilters), тот же движок реальных предикатов
+   (REAL_FILTER_PRED), что и в живом гриде выдачи — только применяются не
+   ко всей базе, а к процедурам, которые УЖЕ сохранены в этой подборке. */
+function folderBaseProcs(){
+  const f = findFolder(S.curFolder);
+  if(!f) return [];
+  const shown = f.items.filter(i=>S.folderItemsTab==='active' ? !i.archived : i.archived);
+  return shown.map(i=>PROCS.find(p=>p.id===i.id)).filter(Boolean);
+}
+function applyFolderFilters(arr){
+  S.folderFilters.forEach(r=>{
+    const pred = REAL_FILTER_PRED[r.f];
+    if(pred){ const narrowed = arr.filter(p=>pred(p, r.v, r.o)); if(narrowed.length) arr = narrowed; }
+  });
+  return arr;
+}
+function openFolderCritModal(){ S.folderCritModalOpen=true; S.openDD=null; render(); }
+function closeFolderCritModal(){ S.folderCritModalOpen=false; render(); }
+function addFolderFilterRow(){
+  const used = S.folderFilters.map(r=>r.f);
+  const avail = Object.keys(FIELD_DEFS).find(f=>!used.includes(f)) || Object.keys(FIELD_DEFS)[0];
+  const def = FIELD_DEFS[avail];
+  S.folderFilters.push({f:avail, o:def.ops[0], v:def.values?def.values[0]:'', delta:def.delta});
+  render();
+}
+function removeFolderFilterRow(i){ S.folderFilters.splice(i,1); render(); }
+function folderCritRunning(){
+  let arr = folderBaseProcs();
+  let prev = arr.length;
+  return S.folderFilters.map(r=>{
+    const pred = REAL_FILTER_PRED[r.f];
+    if(pred){ const narrowed = arr.filter(p=>pred(p, r.v, r.o)); if(narrowed.length) arr = narrowed; }
+    const total = arr.length;
+    const delta = Math.max(0, prev-total);
+    prev = total;
+    return {...r, total, delta};
+  });
+}
+function folderCritRow(r,i){
+  const warn = r.total<=2;
+  return `<div class="crow ${warn?'warn':''}">
+    <span class="cidx">${i+1}.</span>
+    ${ddField('ff'+i,'f','folder',i,r.f,Object.keys(FIELD_DEFS))}
+    ${ddField('fo'+i,'o','folder',i,r.o,opsFor(r.f))}
+    ${valueField('fv'+i,'folder',i,r)}
+    <span class="cdelta num">−${fmt(r.delta)}</span>
+    <span class="ctotal num">${fmt(r.total)}</span>
+    ${warn?'<span class="cwarn" title="Риск нулевой выборки">⚠</span>':''}
+    <button class="ctrash" onclick="removeFolderFilterRow(${i})">🗑</button>
+  </div>`;
+}
+function renderFolderCritModal(){
+  const base = folderBaseProcs();
+  const rows = folderCritRunning();
+  return `<div class="modalbg" onclick="if(event.target===this)closeFolderCritModal()">
+    <div class="modalcard">
+      <div class="mhead"><span class="mtitle">Критерии подборки «${esc(S.curFolder)}»</span><button class="mx" onclick="closeFolderCritModal()">×</button></div>
+      <div class="mrow0"><span>🔖</span><span class="mquery">Всего в подборке (${S.folderItemsTab==='active'?'активные':'в архиве'})</span><span class="mcount num">${fmt(base.length)}</span></div>
+      ${rows.map((r,i)=>folderCritRow(r,i)).join('')}
+      <div class="eadd" onclick="addFolderFilterRow()">⊕ Добавить</div>
+      <div class="mfoot"><span class="sp2"></span><button class="esave" onclick="closeFolderCritModal()">Готово</button></div>
+    </div>
+  </div>`;
+}
+function viewFolderGrid(){
+  const f = findFolder(S.curFolder);
+  const shown = f.items.filter(i=>S.folderItemsTab==='active' ? !i.archived : i.archived);
+  let procs = shown.map(i=>PROCS.find(p=>p.id===i.id)).filter(Boolean);
+  procs = sortArr(applyFolderFilters(procs));
+  const activeN = f.items.filter(i=>!i.archived).length;
+  const archN = f.items.filter(i=>i.archived).length;
+  return `<div class="gcol" style="width:auto;flex:1;border-right:1px solid var(--line)">
+    <div class="gh">
+      <div class="gh1">
+        <button class="x" onclick="S.curFolder=null;render()">×</button>
+        <span class="t">${esc(S.curFolder)}</span><span class="c num">${fmt(procs.length)}</span>
+        <button class="kb" onclick="createFolder()" title="Создать папку">⊕</button>
+      </div>
+      <div class="gh2">
+        ${sortBtn()}
+        <button class="gbtn" onclick="openFolderCritModal()">☰ Критерии<span class="bdg num">${S.folderFilters.length}</span></button>
+        <span class="sp"></span>
+        <button class="gbtn" style="${S.folderItemsTab==='active'?'border-color:var(--blue);color:var(--blue)':''}" onclick="S.folderItemsTab='active';S.checked=[];render()">Активные ${activeN}</button>
+        <button class="gbtn" style="${S.folderItemsTab==='archived'?'border-color:var(--blue);color:var(--blue)':''}" onclick="S.folderItemsTab='archived';S.checked=[];render()">В архиве ${archN}</button>
+      </div>
+    </div>
+    <div class="gsc">
+      ${S.folderItemsTab==='archived'?`<div class="infob">ℹ️ Здесь — процедуры из этой подборки с истёкшим сроком подачи заявок или перемещённые вручную. Их можно вернуть назад в активные.</div>`:''}
+      ${procs.length?procs.map(p=>prow(p,{folder:S.curFolder, archived:S.folderItemsTab==='archived'})).join(''):
+      `<div style="padding:30px 6px;color:var(--ink4);font-size:13px;text-align:center">${S.folderItemsTab==='active'?(S.folderFilters.length?'Нет процедур, подходящих под критерии':'В подборке пока ничего нет'):'В архиве подборки пусто'}</div>`}</div>
+    ${S.checked.length?bulkFolder():''}
+  </div>`;
+}
+
+/* ---------- TEMPLATES ---------- */
+function viewTemplates(){
+  return `<div style="display:flex;flex-direction:row;overflow:hidden;flex:1;min-width:0">
+    <div class="fpage" style="width:${S.curTemplate?'420px':'100%'};flex:none;${S.curTemplate?'border-right:1px solid var(--line)':''}">
+      <div class="fph"><h1>Шаблоны подбора</h1></div>
+      <div class="flist" style="padding-top:18px">
+        ${TEMPLATES.map(t=>`<div class="frow ${S.curTemplate===t.n?'on':''}" onclick="openTemplate('${esc(t.n)}')">
+          <div class="ftx"><div class="fn">${esc(t.n)}</div></div>
+          <div class="fdate num">${t.c}</div><div class="fdate">${t.d}</div>
+          <button class="fkb" onclick="event.stopPropagation()">⋮</button>
+        </div>`).join('')}
+      </div>
+    </div>
+    ${S.curTemplate?viewTemplateDetail():''}
+  </div>`;
+}
+function openTemplate(n){ S.curTemplate=n; S.templateEdit=false; render(); }
+/* тот же принцип, что и у карточки процедуры (см. openCard/viewCard) — переигрываем
+   анимацию появления панели только когда реально меняется её содержимое (открыли другой
+   шаблон / вошли в режим редактирования), а не при каждом клике внутри неё самой
+   (например, при открытии/закрытии выпадающего списка поля критерия). */
+function dcolFresh(key){ const fresh = S.dcolAnimKey!==key; S.dcolAnimKey=key; return fresh; }
+function viewTemplateDetail(){
+  const t = TEMPLATES.find(x=>x.n===S.curTemplate);
+  if(S.templateEdit) return viewTemplateEdit(t);
+  const fresh = dcolFresh('view:'+S.curTemplate);
+  return `<div class="dcol" style="width:auto;flex:1;${fresh?'':'animation:none'}">
+    <div class="dh"><span class="t">${esc(t.n)}</span><button class="x" onclick="S.curTemplate=null;render()">×</button></div>
+    <div class="dsc">
+      ${t.rules.map(r=>`<div class="frule"><div class="fl">${r.f}</div><div class="fo">${r.o}</div><div class="fv">${esc(r.v)}</div></div>`).join('')}
+      <div class="dactions">
+        <div class="dact pri" onclick="startFromTemplate('${esc(t.n)}')">💬 Начать новый подбор</div>
+        <div class="dact" onclick="toast('Шаблон продублирован')">⧉ Дублировать</div>
+        <div class="dact" onclick="startTplEdit(t)">Редактировать</div>
+        <div class="dact" onclick="toast('Переименование')">Переименовать</div>
+        <div class="dact danger" onclick="toast('Шаблон удалён')">🗑 Удалить</div>
+      </div>
+    </div>
+  </div>`;
+}
+function startTplEdit(t){ S.templateEdit=true; S.openDD=null; S.curTplRules=t.rules.slice(1).map(r=>({...r})); render(); }
+function addTplRule(){
+  const used=S.curTplRules.map(r=>r.f);
+  const avail=Object.keys(FIELD_DEFS).find(f=>!used.includes(f))||Object.keys(FIELD_DEFS)[0];
+  const def=FIELD_DEFS[avail];
+  S.curTplRules.push({f:avail, o:def.ops[0], v:def.values?def.values[0]:''});
+  render();
+}
+function saveTplEdit(n){
+  const t = TEMPLATES.find(x=>x.n===n);
+  t.rules = [t.rules[0], ...S.curTplRules];
+  S.templateEdit=false; S.curTplRules=null;
+  toast('Шаблон сохранён'); render();
+}
+function viewTemplateEdit(t){
+  const fresh = dcolFresh('edit:'+S.curTemplate);
+  return `<div class="dcol" style="width:auto;flex:1;${fresh?'':'animation:none'}">
+    <div class="dh"><span class="t">${esc(t.n)}</span><button class="x" onclick="S.templateEdit=false;S.curTplRules=null;render()">×</button></div>
+    <div class="dsc">
+      <div class="esearch">🔍 Запрос: ${esc(t.rules[0].v)}</div>
+      ${S.curTplRules.map((r,i)=>`<div class="econd">
+        <span class="en">${i+1}.</span>
+        ${ddField('tf'+i,'f','tpl',i,r.f,Object.keys(FIELD_DEFS))}
+        ${ddField('to'+i,'o','tpl',i,r.o,opsFor(r.f))}
+        ${valueField('tv'+i,'tpl',i,r)}
+        <button class="ctrash" onclick="S.curTplRules.splice(${i},1);render()">🗑</button>
+      </div>`).join('')}
+      <div class="eadd" onclick="addTplRule()">⊕ Добавить</div>
+      <div><button class="esave" onclick="saveTplEdit('${esc(t.n)}')">Сохранить</button>
+      <button class="ecancel" onclick="S.templateEdit=false;S.curTplRules=null;render()">Отмена</button></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- misc ---------- */
+function toast(t){
+  const d=document.createElement('div');
+  d.textContent=t;
+  d.style.cssText='position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#1B1E2B;'+
+    'color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;z-index:300;box-shadow:0 8px 26px rgba(0,0,0,.25)';
+  document.body.appendChild(d); setTimeout(()=>d.remove(),2000);
+}
+document.getElementById('burger').onclick=()=>{ S.navCol=!S.navCol; render(); };
+
+/* Единственный на весь документ обработчик "клик вне — закрыть меню".
+   Важно: он навешан ОДИН раз при загрузке, а не заново на каждый render() —
+   если бы он пересоздавался при каждом рендере, клики множились бы и
+   меню открывалось/закрывалось само по себе. Срабатывает на mousedown
+   (до перерисовки DOM по клику), поэтому не путается в новых/старых узлах. */
+document.addEventListener('mousedown', (e)=>{
+  if(S.openDD!==null && !e.target.closest('[data-dd]')){ S.openDD=null; S.sortPendingField=null; render(); }
+});
+
+render();
+</script>
+</body>
+</html>
