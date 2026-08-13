@@ -176,13 +176,19 @@ input,textarea{font:inherit}
   font-size:12.5px;color:var(--ink2);font-weight:500}
 .chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
 .chip.muted{color:var(--ink4)}
-.chip.back{border-color:var(--ink4);color:var(--ink3);font-weight:600;order:-1}
-.chip.back:hover{border-color:var(--ink2);color:var(--ink);background:var(--panel2)}
+/* «Назад» раньше был обычным чипом в общем ряду с вариантами ответа —
+   визуально выглядел как ещё один вариант ответа, хотя по смыслу это
+   навигация. Теперь стоит отдельной строкой НАД вариантами, со своим
+   отступом и обводкой — не перепутать с ответом. */
+.backrow{margin-top:6px}
+.tipi{color:var(--ink4);cursor:help;font-size:12px}
+.chip.back{border-color:var(--line);color:var(--ink3);font-weight:600;background:var(--panel2)}
+.chip.back:hover{border-color:var(--ink2);color:var(--ink);background:var(--panel)}
 .chip.prompt{border-style:dashed;color:var(--blue);background:var(--blue-l)}
 .chip.prompt:hover{border-style:solid}
 
 .ctac{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;
-  display:flex;align-items:center;gap:12px;margin-top:10px;max-width:380px}
+  display:flex;align-items:center;gap:12px;margin-top:10px;max-width:380px;cursor:pointer}
 .ctac:hover{border-color:var(--blue);box-shadow:0 2px 10px rgba(47,92,224,.1)}
 .ctac .ic{width:36px;height:36px;border-radius:9px;background:var(--blue-l);color:var(--blue);
   display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
@@ -242,6 +248,13 @@ input,textarea{font:inherit}
 .gbtn .bdg{background:var(--blue);color:#fff;font-size:10px;font-weight:700;
   padding:1px 6px;border-radius:99px;margin-left:1px}
 .gsc{flex:1;overflow-y:auto;padding:10px 15px 60px;margin-top:8px}
+.gpager{flex:none;display:flex;align-items:center;justify-content:center;gap:16px;
+  padding:10px 15px;border-top:1px solid var(--line)}
+.gpbtn{padding:6px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;
+  font-size:12.5px;font-weight:600;color:var(--ink2)}
+.gpbtn:hover{border-color:var(--blue);color:var(--blue)}
+.gpbtn:disabled{opacity:.35;pointer-events:none}
+.gpinfo{font-size:12px;color:var(--ink3);font-weight:500}
 .prow{border-radius:10px;padding:10px 10px;cursor:pointer;display:flex;gap:10px;margin-bottom:2px;
   border:1px solid transparent}
 .prow:hover{background:var(--panel2)}
@@ -283,10 +296,17 @@ input,textarea{font:inherit}
 .ctit{font-size:17px;font-weight:700;letter-spacing:-.02em;line-height:1.35;margin-bottom:8px}
 .ccust{font-size:13px;color:var(--blue);text-decoration:none;display:inline-block;margin-bottom:14px}
 .ccust:hover{text-decoration:underline}
+/* Аккуратнее, чем было: тонкая линия-разделитель между строками (а не
+   голый список), значение справа обрезается многоточием, если слишком
+   длинное (было — просто переносилось как попало и «плыло»), первая
+   колонка не занимает больше половины ширины даже у длинных названий
+   критериев. */
 .ktab{width:100%;border-collapse:collapse;margin-bottom:12px}
-.ktab td{padding:6px 0;font-size:13px;vertical-align:baseline}
-.ktab td:first-child{color:var(--ink3);white-space:nowrap;width:1%;padding-right:8px}
-.ktab td:last-child{text-align:right;font-weight:500;padding-left:8px}
+.ktab tr{border-bottom:1px solid var(--line2)}
+.ktab tr:last-child{border-bottom:none}
+.ktab td{padding:8px 0;font-size:13px;vertical-align:baseline}
+.ktab td:first-child{color:var(--ink3);padding-right:10px;max-width:55%}
+.ktab td:last-child{text-align:right;font-weight:600;padding-left:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:45%}
 .morea{font-size:13px;color:var(--blue);cursor:pointer;display:inline-block;margin-bottom:14px}
 .morea:hover{text-decoration:underline}
 .docbox{background:var(--purple-bg);border-radius:12px;padding:13px 15px;margin-bottom:12px}
@@ -555,7 +575,13 @@ function regionOf(place){
 const CUSTOMERS=['ООО «Сервис Логистика и Консалтинг»','ПАО «Западно-Сибирская торговая компания»','ООО «Компания»',
  'ГАУЗ ЯО «Областная больница»','АО «Ярославский завод»','МУП «Ярославльводоканал»','ООО «РИ-ИНВЕСТ»',
  'ООО «СтройИнвест-Регион»','АО «ТехноСервис»','ООО «Меркурий Групп»','ФГБУ «Центр обеспечения закупок»','ООО «Альянс-Строй»'];
-const TT_TYPES=['Частные торги','Коммерческие закупки','223-ФЗ','44-ФЗ'];
+/* Реальный набор значений — по CSV «Критерии из документации» (12.08.2026):
+   «Частные торги» ушло, вместо него — 615-ПП и Портал Поставщиков, по
+   просьбе заказчика добавленные КАК ЕСТЬ (см. FIELD_DEFS['Тип торгов']) —
+   и, раз это синтетическая база под нашим полным контролем, не просто
+   текстом в чипах, а реальными значениями генератора, чтобы клик по ним
+   и правда что-то находил, а не тихо ничего не делал. */
+const TT_TYPES=['44-ФЗ','223-ФЗ','615-ПП','Коммерческие закупки','Портал Поставщиков'];
 let _pcSeq=0;
 function genId(){ _pcSeq++; return 'B'+(1707250938500+_pcSeq*37); }
 
@@ -640,6 +666,18 @@ const CATS=[
    'Поставка расходных материалов для больницы',
    'Поставка медицинских расходных материалов',
   ]},
+ /* Добавлено точечно: «воздушные шарики» — тот самый пример с созвона
+    с заказчиком, на котором выяснилось, что запрос вне наших категорий
+    откатывается к показу всей базы (первой попадается «асфальтобетонное
+    покрытие»). Системная проблема (для любого запроса без совпадений
+    поведение будет тем же) описана отдельно в ответе — это не полное
+    решение, а фикс конкретного примера. */
+ {kind:'товары', tags:['воздушные шарики','шары','праздничное оформление','декор','сувениры','подарки'],
+  pMin:40000,pMax:220000, items:[
+   'Поставка воздушных шаров и праздничного оформления для корпоративного мероприятия',
+   'Поставка сувенирной и подарочной продукции к праздничным датам',
+   'Организация праздничного оформления офиса воздушными шарами',
+  ]},
 ];
 
 /* На каждое название лота — несколько экземпляров с разными городом/ценой/
@@ -663,7 +701,9 @@ const EQUIVALENT_VALS=['допускается','не допускается','�
 const EXPERIENCE_SRC_VALS=['договоры из ЕИС','любые договоры'];
 const ASSESSMENT_VALS=['только цена','не только цена'];
 const DELIVERY_MODES=['разово','по заявкам','партиями'];
-const METHOD_VALS=['Аукцион','Конкурс','Запрос котировок','Запрос предложений'];
+/* Тоже по CSV — «Аукцион» разделился на «на повышение»/«на понижение»,
+   добавилась «Продажа посредством публичного предложения». */
+const METHOD_VALS=['Аукцион на повышение','Аукцион на понижение','Конкурс','Запрос предложений','Запрос котировок','Продажа посредством публичного предложения'];
 const STATUS_VALS=['Активные','Архивные'];
 
 /* Раньше одно и то же название лота клонировалось 14 раз подряд — в гриде
@@ -673,22 +713,40 @@ const STATUS_VALS=['Активные','Архивные'];
    вариантов на одно название, так что в пределах одной базовой позиции
    повторов текста не будет вовсе. */
 const TITLE_SUFFIXES=['',' — партия 1',' — партия 2',' на 2026 год',' на 2027 год',
- ' для филиала',' для нового объекта',' в рамках сервисного договора',' (повторная закупка)',' для склада №2'];
+ ' для филиала',' для нового объекта',' в рамках сервисного договора',' (повторная закупка)',' для склада №2',
+ ' для филиала №2',' для филиала №3',' в рамках рамочного договора',' по итогам конкурса',
+ ' для регионального подразделения',' согласно техническому заданию',' в связи с расширением',
+ ' для нового склада',' по программе развития',' для производственного участка',
+ ' в рамках модернизации',' для сезонных нужд',' по заявке филиала',' в целях импортозамещения',
+ ' для капитального ремонта']; /* 25 — при реальной генерации по 10 480 процедур на запрос (см. QUERY_BATCH_SIZE) чем больше суффиксов, тем реже буквально повторяется один и тот же текст названия */
 const PROCS=[];
 const VARIANTS_PER_ITEM=6; /* 43 названия × 6 = ~258 процедур, без повторов текста внутри одного названия */
 let _cityCursor=0, _custCursor=0;
 CATS.forEach(cat=>{
   cat.items.forEach(baseTitle=>{
+    /* Код ОКПД2 — один на базовое название (не на каждый вариант отдельно):
+       все варианты одного и того же товара/работы/услуги — один и тот же
+       код классификатора, как в жизни, а не случайный на каждую карточку.
+       Формат (XX.XX.XX.XXX) правдоподобный, а не настоящий классификатор —
+       раньше в этом поле вообще показывались теги категории текстом
+       («ремонт, отделочные работы, монтаж…»), что и совпадало один в один
+       с полем КСР. */
+    const okpd2 = `${10+Math.floor(_rnd()*89)}.${10+Math.floor(_rnd()*89)}.${10+Math.floor(_rnd()*89)}.${100+Math.floor(_rnd()*899)}`;
     for(let v=0; v<VARIANTS_PER_ITEM; v++){
       const title = baseTitle + TITLE_SUFFIXES[v % TITLE_SUFFIXES.length];
       const city=CITIES[_cityCursor%CITIES.length]; _cityCursor++;
-      const cust=CUSTOMERS[_custCursor%CUSTOMERS.length]; _custCursor+=3;
-      const tt=TT_TYPES[_rnd()<0.5?0:(1+Math.floor(_rnd()*3))];
+      const cust=CUSTOMERS[_custCursor%CUSTOMERS.length]; _custCursor++;
+      const tt=TT_TYPES[Math.floor(_rnd()*TT_TYPES.length)]; /* раньше формула (0.5 / 1+floor(*3)) была рассчитана на старые 4 значения — при расширении TT_TYPES до 5 индекс 4 («Портал Поставщиков») был физически недостижим; равномерный выбор по длине массива работает для любого количества значений */
       const urgent=_rnd()<0.06;
       const noPrice=_rnd()<0.1;
       const nmck=noPrice?null:Math.round((cat.pMin+_rnd()*(cat.pMax-cat.pMin))/100)*100+0.99;
       const days=urgent?0.5:Math.round(1+_rnd()*40);
       const pubDays=Math.round(_rnd()*45); /* сколько дней назад опубликована — для сортировки «Дата публикации» */
+      /* Приём заявок открывается в день публикации или чуть позже — реальное
+         поле для критерия «Дата начала приёма заявок» (раньше у него вообще
+         не было предиката/значения, фильтр по нему не работал, см.
+         REAL_FILTER_PRED). */
+      const appStartDays=Math.max(0, pubDays-Math.floor(_rnd()*4));
 
       const orderType=cat.kind;
       const paymentType=PAYMENT_TYPES[Math.floor(_rnd()*PAYMENT_TYPES.length)];
@@ -716,6 +774,11 @@ CATS.forEach(cat=>{
       const status=_rnd()<0.85?STATUS_VALS[0]:STATUS_VALS[1];
       const method=METHOD_VALS[Math.floor(_rnd()*METHOD_VALS.length)];
       const msp=_rnd()<0.4;
+      /* КСР — классификатор именно строительных ресурсов, поэтому у работ
+         используется значительно чаще, чем у товаров/услуг. Раньше это
+         поле вообще не имело собственного значения и показывало то же,
+         что и ОКПД2 (p.tags) — путало, выглядело как дублирующаяся строка. */
+      const usesKSR=orderType==='работы'?_rnd()<0.6:_rnd()<0.1;
       const evTxt={'подписание актов':'после подписания актов','приемка':'после приёмки','поставка':'после поставки','счет':'по счёту'}[paymentEvent]||'';
       const pay = paymentType==='аванс' ? `аванс ${prepaidExpense}% предоплатой`
         : paymentType==='комбо' ? `аванс ${prepaidExpense}%, остальное постоплатой ${evTxt}`
@@ -725,14 +788,14 @@ CATS.forEach(cat=>{
       PROCS.push({
         id:genId(), st:'Прием заявок', lot:'Лот 1 из '+(1+Math.floor(_rnd()*2)),
         n:title, cust, tt, place:city, nmck, pay,
-        end:fakeDate(days), days, urgent, tags:cat.tags, pubDays,
+        end:fakeDate(days), days, urgent, tags:cat.tags, pubDays, appStartDays,
         inn:'76'+String(1000000+Math.floor(_rnd()*8999999)),
         orderType, paymentType, prepaidExpense, paymentEvent, paymentStages, paymentTerm,
         backingRequired, backingForm, applicationSecurityAmount,
         contractBackingForm, contractBackingSize, bankRestrictions, bgValidityTerm,
         equivalentVal, experienceRequired, experienceFrom,
         nationalRegime, assessmentMethod, isExperience, howExperience,
-        deliveryMode, docsList, priceOfferTerm, status, method, msp,
+        deliveryMode, docsList, priceOfferTerm, status, method, msp, usesKSR, okpd2,
       });
     }
   });
@@ -766,14 +829,187 @@ function matchScore(p, toks){
   toks.forEach(t=>{ if(hayToks.some(h=>stemMatch(h,t))) s++; });
   return s;
 }
+/* ---------- генерация процедур под ЛЮБОЙ запрос пользователя ----------
+   Раньше подбор опирался только на ~13 захардкоженных категорий (CATS):
+   если запрос не совпадал ни с одним тегом, rankMatches() откатывался к
+   показу всей базы целиком, без всякой связи с текстом запроса (это и была
+   «асфальтобетонное покрытие» на запрос «воздушные шарики» из звонка с
+   заказчиком). По прямой просьбе (10.08.2026, «пользователь должен мочь
+   ввести любой товар, который он поставляет») теперь под КАЖДЫЙ запрос
+   генерируется собственный набор процедур, названия которых реально
+   содержат текст запроса в нескольких формулировках — не только у старых
+   13 тем. Остальные поля генерируются той же логикой, что и у CATS
+   (тот же диапазон значений, те же справочники) — поэтому REAL_FILTER_PRED
+   одинаково честно фильтрует что старые, что новые процедуры: иллюзия
+   касается только текста названия под конкретный запрос, а не логики
+   фильтрации. Сид — хэш текста запроса, поэтому один и тот же запрос
+   в рамках сессии всегда даёт один и тот же набор (см. QUERY_PROC_CACHE),
+   а не результат каждый раз пересобирается заново. */
+function hashStr(s){
+  let h=0;
+  for(let i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))|0; }
+  return h>>>0;
+}
+function capFirst(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+function guessKindForQuery(q){
+  const s=q.toLowerCase();
+  if(/услуг|обслуживани|сопровожд|консалт|аренд/.test(s)) return 'услуги';
+  if(/работ[аы]?\b|монтаж|ремонт|строительств|реконструкц|демонтаж|укладк/.test(s)) return 'работы';
+  return 'товары';
+}
+function queryTitles(rawQuery){
+  const q=rawQuery.trim().replace(/\s+/g,' ');
+  const low=q.charAt(0).toLowerCase()+q.slice(1);
+  /* Раньше — 7 шаблонов, при батче в 10 480 процедур каждый текст названия
+     повторялся ~60 раз (7 × 25 суффиксов = 175 комбинаций). Расширено до 20 —
+     20 × 25 = 500 комбинаций, ~21 повтор на комбинацию (13.08.2026, по
+     просьбе «разнообразим формулировки»). Шаблоны намеренно не содержат слов
+     «товары/работы/услуги» — реальный тип предмета (orderType) определяется
+     отдельно, через guessKindForQuery(), и вставка своего слова сюда могла бы
+     разойтись с ним и противоречить настоящему значению поля «Тип предмета». */
+  return [
+    `Поставка: ${low}`,
+    `Закупка партии «${q}»`,
+    `Поставка ${low} для нужд организации`,
+    `${capFirst(q)} — приобретение по контракту`,
+    `Поставка ${low} для филиала`,
+    `Приобретение: ${q}`,
+    `${capFirst(q)} — поставка по заявкам`,
+    `Закупка: ${low}`,
+    `Поставка ${low} по договору поставки`,
+    `Организация поставки: ${low}`,
+    `${capFirst(q)} — открытая процедура закупки`,
+    `Проведение закупки: ${low}`,
+    `Поставка ${low} для собственных нужд заказчика`,
+    `Закупка по потребности: ${low}`,
+    `${capFirst(q)} — запрос предложений`,
+    `Поставка ${low} в рамках исполнения контракта`,
+    `Приобретение ${low} для нужд предприятия`,
+    `${capFirst(q)} — конкурентная закупка`,
+    `Закупка на конкурсной основе: ${low}`,
+    `Поставка ${low} согласно спецификации`,
+  ];
+}
+/* По прямому решению (13.08.2026) — не иллюзия большой базы поверх
+   маленькой реальной, а РЕАЛЬНАЯ генерация именно такого размера: на любой
+   запрос честно создаётся ровно QUERY_BATCH_SIZE процедур, реально
+   фильтруемых. Это и убирает саму причину «скачка счётчика при раскрытии»
+   (см. историю правок этой сессии — сглаживание помогало, но не до конца) —
+   раскрывать больше нечего, показанное число всегда было настоящим.
+   Индекс идёт плоским счётчиком 0..QUERY_BATCH_SIZE-1 (а не вложенными
+   циклами «название × вариант»), чтобы получить РОВНО заданное количество
+   независимо от того, делится ли оно на число шаблонов названий без
+   остатка. */
+const QUERY_BATCH_SIZE=10480;
+const QUERY_PROC_CACHE=new Map();
+function genQueryProcs(rawQuery){
+  const query=String(rawQuery||'').trim();
+  if(!query) return PROCS.map(p=>p.id); /* пустой запрос — как раньше, вся база (используется, напр., в openChat() для чата без сохранённого названия) */
+  const key=query.toLowerCase();
+  if(QUERY_PROC_CACHE.has(key)) return QUERY_PROC_CACHE.get(key).slice();
+  const rnd=mulberry32(hashStr(key) || 1);
+  const kind=guessKindForQuery(query);
+  const tags=tokenize(query);
+  const pMin=60000, pMax=950000; /* общий правдоподобный диапазон — под произвольный запрос конкретная категория цен заранее не известна */
+  const ids=[];
+  /* Один код ОКПД2 на весь запрос (не на каждую процедуру отдельно) — см.
+     комментарий у первой генерации (CATS). */
+  const okpd2 = `${10+Math.floor(rnd()*89)}.${10+Math.floor(rnd()*89)}.${10+Math.floor(rnd()*89)}.${100+Math.floor(rnd()*899)}`;
+  const titles = queryTitles(query);
+  for(let idx=0; idx<QUERY_BATCH_SIZE; idx++){
+    const baseTitle = titles[idx % titles.length];
+    const suffixIdx = Math.floor(idx / titles.length);
+    const title = baseTitle + TITLE_SUFFIXES[suffixIdx % TITLE_SUFFIXES.length];
+    const city=CITIES[_cityCursor%CITIES.length]; _cityCursor++;
+    const cust=CUSTOMERS[_custCursor%CUSTOMERS.length]; _custCursor++;
+    const tt=TT_TYPES[Math.floor(rnd()*TT_TYPES.length)];
+    const urgent=rnd()<0.06;
+    const noPrice=rnd()<0.1;
+    const nmck=noPrice?null:Math.round((pMin+rnd()*(pMax-pMin))/100)*100+0.99;
+    const days=urgent?0.5:Math.round(1+rnd()*40);
+    const pubDays=Math.round(rnd()*45);
+    const appStartDays=Math.max(0, pubDays-Math.floor(rnd()*4)); /* см. комментарий у первой генерации (CATS) */
+    const orderType=kind;
+    const paymentType=PAYMENT_TYPES[Math.floor(rnd()*PAYMENT_TYPES.length)];
+    const prepaidExpense=paymentType==='аванс'?(30+Math.floor(rnd()*70)):(paymentType==='комбо'?(10+Math.floor(rnd()*50)):0);
+    const paymentEvent=PAYMENT_EVENTS[Math.floor(rnd()*PAYMENT_EVENTS.length)];
+    const paymentStages=PAYMENT_STAGES[Math.floor(rnd()*PAYMENT_STAGES.length)];
+    const paymentTerm=5+Math.floor(rnd()*25);
+    const backingRequired=rnd()<0.55;
+    const backingForm=backingRequired?(rnd()<0.5?'деньги':'БГ или деньги'):null;
+    const applicationSecurityAmount=backingRequired?(1+Math.floor(rnd()*4)):null;
+    const contractBackingForm=backingRequired?(rnd()<0.5?'деньги':'БГ или деньги'):null;
+    const contractBackingSize=backingRequired?(5+Math.floor(rnd()*15)):null;
+    const bankRestrictions=backingRequired?(rnd()<0.6?'да':'нет'):null;
+    const bgValidityTerm=(backingRequired && contractBackingForm!=='деньги')?(30+Math.floor(rnd()*150)):null;
+    const equivalentVal=orderType==='товары'?EQUIVALENT_VALS[Math.floor(rnd()*3)]:null;
+    const experienceRequired=rnd()<0.25;
+    const experienceFrom=experienceRequired?(rnd()<0.6?EXPERIENCE_SRC_VALS[0]:EXPERIENCE_SRC_VALS[1]):null;
+    const nationalRegime=orderType==='товары'?(rnd()<0.35?'да':'нет'):(rnd()<0.1?'да':'нет');
+    const assessmentMethod=ASSESSMENT_VALS[rnd()<0.7?0:1];
+    const isExperience=assessmentMethod==='не только цена' && rnd()<0.5;
+    const howExperience=isExperience?(rnd()<0.6?EXPERIENCE_SRC_VALS[0]:EXPERIENCE_SRC_VALS[1]):null;
+    const deliveryMode=DELIVERY_MODES[Math.floor(rnd()*DELIVERY_MODES.length)];
+    const docsList=rnd()<0.3?'да':'нет';
+    const priceOfferTerm=10+Math.floor(rnd()*20);
+    const status=rnd()<0.85?STATUS_VALS[0]:STATUS_VALS[1];
+    const method=METHOD_VALS[Math.floor(rnd()*METHOD_VALS.length)];
+    const msp=rnd()<0.4;
+    const usesKSR=orderType==='работы'?rnd()<0.6:rnd()<0.1; /* см. комментарий у первой генерации (CATS) */
+    const evTxt={'подписание актов':'после подписания актов','приемка':'после приёмки','поставка':'после поставки','счет':'по счёту'}[paymentEvent]||'';
+    const pay = paymentType==='аванс' ? `аванс ${prepaidExpense}% предоплатой`
+      : paymentType==='комбо' ? `аванс ${prepaidExpense}%, остальное постоплатой ${evTxt}`
+      : paymentType==='отсрочка' ? `отсрочка платежа, ${paymentTerm} дн. ${evTxt}`
+      : `постоплата, ${paymentTerm} дн. ${evTxt}`;
+    const proc={
+      id:genId(), st:'Прием заявок', lot:'Лот 1 из '+(1+Math.floor(rnd()*2)),
+      n:title, cust, tt, place:city, nmck, pay,
+      end:fakeDate(days), days, urgent, tags, pubDays, appStartDays,
+      inn:'76'+String(1000000+Math.floor(rnd()*8999999)),
+      orderType, paymentType, prepaidExpense, paymentEvent, paymentStages, paymentTerm,
+      backingRequired, backingForm, applicationSecurityAmount,
+      contractBackingForm, contractBackingSize, bankRestrictions, bgValidityTerm,
+      equivalentVal, experienceRequired, experienceFrom,
+      nationalRegime, assessmentMethod, isExperience, howExperience,
+      deliveryMode, docsList, priceOfferTerm, status, method, msp, usesKSR, okpd2,
+    };
+    PROCS.push(proc);
+    ids.push(proc.id);
+  }
+  QUERY_PROC_CACHE.set(key, ids);
+  return ids.slice();
+}
+/* Раньше здесь была фильтрация по совпадению тегов из фиксированных 13
+   категорий (CATS) с откатом на «показать всё» при нуле совпадений (см.
+   комментарий выше). Теперь под любой непустой запрос честно генерируется
+   собственный набор процедур (genQueryProcs) — откат к «показать всё»
+   остаётся только для пустого запроса (пустая строка). */
 function rankMatches(query){
-  const toks=tokenize(query);
-  if(!toks.length) return PROCS.map(p=>p.id);
-  const scored=PROCS.map(p=>({id:p.id, s:matchScore(p,toks)}));
-  const hasAny=scored.some(x=>x.s>0);
-  const pool=hasAny?scored.filter(x=>x.s>0):scored; /* ничего не совпало — не показываем пустоту, берём всё */
-  pool.sort((a,b)=>b.s-a.s);
-  return pool.map(x=>x.id);
+  return genQueryProcs(query);
+}
+/* Строковое представление диапазона, которое мы сами кладём в фильтр как
+   value: "min-max" (см. parseNumberRange/applyFreeAnswer/freeCriterionFromChat) —
+   разбираем обратно, чтобы numMatches мог честно проверить ОБЕ границы, а не
+   одну «примерно» (см. комментарий у parseNumberRange — реальный баг
+   13.08.2026: «от 3 до 15 млн» распознавалось как «≈примерно 3 000 000»). */
+function parseRangeStr(v){
+  const m = String(v).trim().match(/^(-?\d+)\s*-\s*(-?\d+)$/);
+  if(!m) return null;
+  return {min:parseInt(m[1],10), max:parseInt(m[2],10)};
+}
+/* Достаём из текста ОДНО целое число, честно отбрасывая копейки/дробную
+   часть в конце (", 99" или ".99") ПЕРЕД тем, как убирать остальные
+   нецифровые символы. Раньше запятая просто выбрасывалась вместе с пробелами
+   и валютой одним regex — «80 900,99 ₽» превращалось в «8090099», то есть
+   значение раздувалось в ~100 раз и предикат «Равен»/±40% никогда не
+   срабатывал даже на том самом числе, что показано на карточке (реальный
+   баг 13.08.2026: self-consistency-тест — предикат «НМЦ лота» проваливался
+   на 100% настоящих карточек). */
+function parseAmount(val){
+  let s = String(val).trim();
+  s = s.replace(/[.,]\d{1,2}(?=\D*$)/, '');
+  const digits = s.replace(/\D/g,'');
+  return digits ? parseInt(digits,10) : NaN;
 }
 /* Общий предикат для ЛЮБОГО числового поля (цена, %, дни): текст значения +
    явно выбранный оператор («Меньше»/«Больше» в модалке критериев). \b (граница
@@ -785,7 +1021,9 @@ function rankMatches(query){
    попадало в дефолтную ветку «около ±40%» — то есть реально не фильтровало. */
 function numMatches(actual, val, op){
   if(actual==null) return false;
-  const num=parseInt(String(val).replace(/\D/g,''),10);
+  const range = parseRangeStr(val);
+  if(range) return actual>=range.min && actual<=range.max;
+  const num=parseAmount(val);
   if(!num) return true;
   const v = String(val).toLowerCase();
   const lessHint = op==='Меньше' || v.includes('до') || v.includes('мень') || v.includes('не более');
@@ -795,21 +1033,61 @@ function numMatches(actual, val, op){
   return Math.abs(actual-num) < Math.max(num*0.4, 5); /* «Равен» / «Диапазон» без второй границы — «около» */
 }
 function priceMatches(nmck, val, op){ return numMatches(nmck, val, op); }
-/* Общий предикат для полей да/нет: actual может быть boolean (true/false)
-   или уже строкой 'да'/'нет' — сравниваем с выбранным чипом без учёта регистра. */
+/* Общий предикат для полей да/нет: actual может быть boolean (true/false),
+   уже строкой 'да'/'нет' или null/undefined (поле не заполнено — считаем
+   это «нет», ровно как в PROC_FIELD_DISPLAY: `p.поле ? 'Да' : 'Нет'`
+   показывает «Нет» и для null тоже). Раньше null обрывал сравнение через
+   отдельный ранний `return false` ДО учёта wantYes/wantNo — то есть ответ
+   «Нет» никогда не совпадал с процедурой, где поле было not-applicable/null,
+   хотя на карточке эта же процедура честно показывала «Нет» (реальный баг
+   13.08.2026, см. self-consistency-тест — «Ограничения по банку»). */
 function boolMatch(actual, val){
   const wantYes = /^да$/i.test(String(val).trim());
   const wantNo = /^нет$/i.test(String(val).trim());
-  if(typeof actual==='boolean') return wantYes ? actual : (wantNo ? !actual : true);
-  if(actual==null) return false;
-  const actualYes = /^да$/i.test(String(actual).trim());
-  if(wantYes) return actualYes;
-  if(wantNo) return !actualYes;
+  const bool = typeof actual==='boolean' ? actual : /^да$/i.test(String(actual==null?'':actual).trim());
+  if(wantYes) return bool;
+  if(wantNo) return !bool;
   return true;
 }
 /* Равенство строкового enum-поля без учёта регистра (payment_type, delivery_mode и т.п.) */
 function eqMatch(actual, val){
   return actual!=null && String(actual).toLowerCase()===String(val).toLowerCase();
+}
+/* Название организации без кавычек любого вида (типографские «…», обычные
+   "…"/'…') и с одним пробелом — см. REAL_FILTER_PRED['Заказчик']. */
+function normOrgName(s){
+  return String(s||'').toLowerCase().replace(/[«»"'']/g,'').replace(/\s+/g,' ').trim();
+}
+/* ОКПД2 — реальный код классификатора на процедуре (p.okpd2), а не
+   tokenize()-сравнение по тегам названия. Раньше «Категория ОКПД 2»
+   фильтровалась через matchScore(p, tokenize(val)) — то есть сравнивала
+   слова из введённого текста со словами в названии/тегах лота. Код вида
+   «70.33.93.273» через tokenize() (только буквенно-цифровые токены длиной
+   >3) превращается в отдельные обрубки «70», «33», «93», «273» — каждый
+   короче 4 символов и отбрасывается фильтром длины, то есть toks всегда
+   пуст и совпадений не бывает НИКОГДА, даже если введённый код в точности
+   совпадает с тем, что показано на карточке (реальный баг 13.08.2026).
+   Сравниваем сам код: точное совпадение или совпадение по началу (ввод
+   более короткого/более общего кода вида «70.33» тоже должен находить
+   полный «70.33.93.273»). */
+function okpd2Norm(s){ return String(s||'').replace(/[^\d.]/g,''); }
+function okpd2Match(actual, val){
+  const a = okpd2Norm(actual), v = okpd2Norm(val);
+  if(!a || !v) return false;
+  return a===v || a.startsWith(v) || v.startsWith(a);
+}
+/* «Дата публикации торгов» / «Дата начала приёма заявок» — оба поля хранят
+   «сколько дней назад» (p.pubDays/p.appStartDays), чипы и типичный свободный
+   текст формулируются как «за последние N дней» → берём N из текста и
+   сравниваем с реальным давностью. 'До' читается как «опубликовано не
+   позже, чем N дней назад» (то есть СТАРШЕ точки отсчёта — daysAgo>=d),
+   'После'/по умолчанию — «не раньше N дней назад» (СВЕЖЕЕ — daysAgo<=d),
+   что соответствует формулировке чипов «За последние N дней». */
+function agoMatch(daysAgo, val, op){
+  const d = parseInt(String(val).match(/\d+/)?.[0]||'0', 10);
+  if(!d) return true;
+  if(op==='До') return daysAgo>=d;
+  return daysAgo<=d;
 }
 const REAL_FILTER_PRED={
  /* --- заказчик / регион / место --- */
@@ -820,16 +1098,27 @@ const REAL_FILTER_PRED={
     не работало вообще ни для одного значения). */
  'Регион заказчика': (p,val)=>eqMatch(regionOf(p.place), val),
  'ИНН заказчика': (p,val)=>p.inn===String(val).replace(/\D/g,''),
- 'Заказчик': (p,val)=>p.cust.toLowerCase().includes(String(val).toLowerCase()),
+ /* Реальные названия заказчиков (CUSTOMERS) записаны с типографскими
+    кавычками-ёлочками («…») — «ООО «Меркурий Групп»». Обычный человек в
+    свободном тексте эти кавычки не печатает («заказчик ООО Меркурий
+    Групп») — простой includes() ломался на этой пунктуации и не находил
+    буквально то же самое название (реальный баг, найден сквозным
+    тестированием сценария «карточка процедуры», 13.08.2026). Сравниваем
+    после нормализации — без кавычек любого вида и с одним пробелом. */
+ 'Заказчик': (p,val)=>normOrgName(p.cust).includes(normOrgName(val)),
 
  /* --- параметры закупки --- */
- 'Тип торгов': (p,val)=>p.tt===val || (/коммерческ/i.test(val) && /коммерческ|частн/i.test(p.tt)),
+ /* «Любые торги» / «Все» — не значения из базы, а честные псевдо-варианты
+    «показать без сужения по этому критерию» (по CSV «Критерии из
+    документации», 12.08.2026) — а не фиктивное совпадение, как раньше
+    было с «коммерческ»/«частн». */
+ 'Тип торгов': (p,val)=>val==='Любые торги' ? true : p.tt===val,
  'Способ проведения': (p,val)=>eqMatch(p.method, val),
- 'Статус торгов': (p,val)=>eqMatch(p.status, val),
+ 'Статус торгов': (p,val)=>val==='Все' ? true : eqMatch(p.status, val),
  'Тип предмета': (p,val)=>eqMatch(p.orderType, val),
  'МСП / СОНО': (p,val)=>boolMatch(p.msp, val),
- 'Категория ОКПД 2': (p,val)=>matchScore(p, tokenize(val))>0,
- 'Классификатор строительных ресурсов (КСР)': (p,val)=>matchScore(p, tokenize(val))>0,
+ 'Категория ОКПД 2': (p,val)=>okpd2Match(p.okpd2, val),
+ 'Классификатор строительных ресурсов (КСР)': (p,val)=>boolMatch(p.usesKSR, val),
 
  /* --- оплата --- */
  'Способ оплаты': (p,val)=>eqMatch(p.paymentType, val),
@@ -861,6 +1150,14 @@ const REAL_FILTER_PRED={
  'Срок КП': (p,val,op)=>numMatches(p.priceOfferTerm, val, op),
 
  /* --- сроки закупки --- */
+ /* «Дата публикации торгов» и «Дата начала приёма заявок» здесь раньше не
+    было ВООБЩЕ — у обоих критериев не было записи в REAL_FILTER_PRED, из-за
+    чего «применённый» фильтр молча не сужал выборку ни на одну процедуру
+    (computeStages/addFilter пропускают шаг без предиката без предупреждения)
+    — критерий показывался как учтённый, а реально ничего не делал. Найдено
+    аудитом «проверь все фильтры» (13.08.2026), см. agoMatch(). */
+ 'Дата публикации торгов': (p,val,op)=>agoMatch(p.pubDays, val, op),
+ 'Дата начала приёма заявок': (p,val,op)=>agoMatch(p.appStartDays, val, op),
  'Окончание приема заявок': (p,val,op)=>{
    const d = parseInt(String(val).match(/\d+/)?.[0]||'0', 10);
    if(!d) return true;
@@ -873,18 +1170,68 @@ const REAL_FILTER_PRED={
  'Есть перечень обязательных документов': (p,val)=>boolMatch(p.docsList, val),
 };
 
-const ALLCRIT = [
- {n:'Место поставки', v:'Ярославль, Москва', s:'Техническое задание.docx', u:true},
- {n:'НМЦ лота', v:'400 000,99 ₽', s:'карточка процедуры', u:true},
- {n:'Тип торгов', v:'Частные торги', s:'карточка процедуры', u:true},
- {n:'Статус торгов', v:'Активные', s:'карточка процедуры', u:true},
- {n:'ИНН заказчика', v:'7604000001', s:'карточка процедуры', u:false},
- {n:'Окончание приёма заявок', v:'25 авг. 2026 в 09:00 мск', s:'карточка процедуры', u:false},
- {n:'Порядок оплаты', v:'По факту получения товара', s:'Проект договора.docx', u:false},
- {n:'Обеспечение заявки', v:'20 000 ₽', s:'карточка процедуры', u:false},
- {n:'Срок поставки', v:'30 календарных дней', s:'Техническое задание.docx', u:false},
- {n:'Национальный режим', v:'Не применяется', s:'Документация, п. 4.2', u:false},
-];
+/* Классификация «Тип» из CSV «Критерии из документации» (12.08.2026) —
+   используется в openM_allcrit() как честный столбец «Источник» вместо
+   выдуманных названий документов (было: «Техническое задание.docx» и
+   т.п. — статично и не по данным). Для трёх полей, которых в этом файле
+   нет вообще («Дата начала приёма заявок», «Требуется обеспечение
+   исполнения», «ИНН заказчика») — классификации тоже нет, оставлены без
+   записи здесь (openM_allcrit() в этом случае честно покажет «—»). */
+const FIELD_SOURCE_TYPE = {
+ 'Тип торгов':'Формализованные', 'Способ проведения':'Формализованные', 'Статус торгов':'Формализованные',
+ 'Тип предмета':'Из документации', 'МСП / СОНО':'Формализованные', 'Категория ОКПД 2':'Формализованные',
+ 'Способ оплаты':'Из документации', 'Аванс: процент':'Из документации', 'Событие для оплаты':'Из документации',
+ 'Этапность платежей':'Из документации', 'Срок оплаты':'Из документации',
+ 'Наличие обеспечения заявки':'Гибрид2', 'Форма обеспечения заявки':'Из документации',
+ 'Размер обеспечения заявки':'Формализованные', 'Форма обеспечения исполнения':'Из документации',
+ 'Размер обеспечения исполнения':'Гибрид2', 'Ограничения по банку':'Из документации',
+ 'Срок действия БГ':'Из документации',
+ 'Опыт: требуется для допуска':'Из документации', 'Опыт: чем подтверждать (допуск)':'Из документации',
+ 'Опыт: критерий оценки':'Из документации', 'Опыт: чем подтверждать (оценка)':'Из документации',
+ 'Место поставки':'Гибрид2', 'Режим поставки':'Из документации', 'Эквивалент':'Из документации',
+ 'Национальный режим':'Гибрид', 'Срок КП':'Из документации',
+ 'Дата публикации торгов':'Формализованные', 'Окончание приема заявок':'Формализованные',
+ 'Метод оценки':'Из документации', 'НМЦ лота':'Формализованные',
+ 'Есть перечень обязательных документов':'Из документации',
+ 'Классификатор строительных ресурсов (КСР)':'Формализованные',
+ 'Заказчик':'Формализованные', 'Регион заказчика':'Формализованные',
+};
+/* Формализованные критерии (см. FIELD_SOURCE_TYPE) — базовый набор, который
+   карточка процедуры показывает ВСЕГДА, независимо от того, что выбрал
+   пользователь в подборе (см. viewCard()) — по просьбе заказчика (п.4,
+   12.08.2026). */
+const CARD_BASE_FIELDS = Object.keys(FIELD_SOURCE_TYPE).filter(n=>FIELD_SOURCE_TYPE[n]==='Формализованные');
+/* Правдоподобное название документа-источника для НЕформализованных полей
+   (по просьбе заказчика, 12.08.2026) — сгруппировано по смыслу критерия
+   (платёжные условия — в проекте договора; предмет/спецификация — в ТЗ;
+   требования к участнику/срокам заявки — в документации о закупке;
+   критерии отбора победителя — в критериях оценки заявок). Не настоящий
+   документ (как и вся карточка — синтетические демо-данные), но
+   правдоподобное, логически уместное название — как и остальные
+   кликабельные заглушки в прототипе (toast() вместо реальной навигации). */
+const FIELD_DOC_NAME = {
+ 'Тип предмета':'Техническое задание.docx', 'Место поставки':'Техническое задание.docx',
+ 'Режим поставки':'Техническое задание.docx', 'Эквивалент':'Техническое задание.docx',
+ 'Способ оплаты':'Проект договора.docx', 'Аванс: процент':'Проект договора.docx',
+ 'Событие для оплаты':'Проект договора.docx', 'Этапность платежей':'Проект договора.docx',
+ 'Срок оплаты':'Проект договора.docx', 'Форма обеспечения исполнения':'Проект договора.docx',
+ 'Размер обеспечения исполнения':'Проект договора.docx', 'Ограничения по банку':'Проект договора.docx',
+ 'Наличие обеспечения заявки':'Документация о закупке.docx', 'Форма обеспечения заявки':'Документация о закупке.docx',
+ 'Срок действия БГ':'Документация о закупке.docx', 'Опыт: требуется для допуска':'Документация о закупке.docx',
+ 'Опыт: чем подтверждать (допуск)':'Документация о закупке.docx', 'Национальный режим':'Документация о закупке.docx',
+ 'Срок КП':'Документация о закупке.docx', 'Есть перечень обязательных документов':'Документация о закупке.docx',
+ 'Опыт: критерий оценки':'Критерии оценки заявок.docx', 'Опыт: чем подтверждать (оценка)':'Критерии оценки заявок.docx',
+ 'Метод оценки':'Критерии оценки заявок.docx',
+};
+/* Единая точка — «откуда взято значение этого критерия» — переиспользуется
+   и в карточке (docbox), и в модалке «Все критерии из документации», чтобы
+   вид источника не расходился между двумя местами. */
+function docSourceCell(name){
+  const src = FIELD_SOURCE_TYPE[name];
+  if(!src || src==='Формализованные') return `<span style="color:var(--ink4)">карточка процедуры</span>`;
+  const doc = FIELD_DOC_NAME[name] || 'Документация о закупке.docx';
+  return `<a style="color:var(--blue);cursor:pointer" onclick="toast('Открывается документ')">${esc(doc)}</a>`;
+}
 
 /* Пустой пользователь: ни чатов, ни подборок изначально нет — они появляются
    по ходу работы (новый запрос → чат в списке; «Сохранить» → подборка). */
@@ -903,167 +1250,246 @@ const TEMPLATES = [
   ]},
 ];
 
-/* 8 блоков критериев, показываются по 4 за раз (2 страницы) — см. carousel()/carPage().
-   Состав полей и формулировки — из реального каталога критериев сервиса
-   («Критерии УПП»: Критерии.csv + Формализованные фильтры.csv + Варианты ответа.csv). */
+/* Порядок и состав блоков — по правке заказчика: Заказчик → Параметры
+   закупки → Сроки и графики → Предмет закупки → Оплата → Оценка заявок →
+   Требования, по 4 блока на странице карусели (снова, как было изначально).
+   Заказчик дал только НАЗВАНИЯ блоков, не список полей внутри «Предмет
+   закупки» / «Оценка заявок» / «Требования» — три прежних блока (Условия
+   исполнения, Опыт участника, Обеспечение, Цена и документы) разобраны по
+   смыслу на эти новые. Это моя интерпретация, не подтверждённая на созвоне —
+   проверьте, что каждое поле легло туда, где оно ожидается. */
 const BLOCKS = [
  {id:'cust', n:'Заказчик', items:['Заказчик','ИНН заказчика','Регион заказчика']},
- {id:'params', n:'Параметры закупки', items:['Тип торгов','Способ проведения','Статус торгов','Тип предмета','МСП / СОНО','Категория ОКПД 2']},
- {id:'pay', n:'Оплата', items:['Способ оплаты','Аванс: процент','Событие для оплаты','Этапность платежей','Срок оплаты']},
- {id:'backing', n:'Обеспечение', items:['Наличие обеспечения заявки','Форма обеспечения заявки','Размер обеспечения заявки',
-   'Требуется обеспечение исполнения','Форма обеспечения исполнения','Размер обеспечения исполнения','Ограничения по банку','Срок действия БГ']},
- {id:'exp', n:'Опыт участника', items:['Опыт: требуется для допуска','Опыт: чем подтверждать (допуск)','Опыт: критерий оценки','Опыт: чем подтверждать (оценка)']},
- {id:'exec', n:'Условия исполнения', items:['Место поставки','Режим поставки','Эквивалент','Национальный режим','Срок КП']},
- {id:'dates', n:'Сроки закупки', items:['Дата публикации торгов','Дата начала приёма заявок','Окончание приема заявок','Метод оценки']},
- {id:'price', n:'Цена и документы', items:['НМЦ лота','Есть перечень обязательных документов','Классификатор строительных ресурсов (КСР)']},
+ {id:'params', n:'Параметры закупки', items:['Тип торгов','Способ проведения','Статус торгов','МСП / СОНО']},
+ {id:'dates', n:'Сроки и графики', items:['Режим поставки','Срок КП','Дата публикации торгов','Дата начала приёма заявок','Окончание приема заявок']},
+ {id:'subject', n:'Предмет закупки', items:['Тип предмета','Категория ОКПД 2','Место поставки','Эквивалент','Национальный режим','Классификатор строительных ресурсов (КСР)']},
+ {id:'pay', n:'Оплата', items:['Способ оплаты','Аванс: процент','Событие для оплаты','Этапность платежей','Срок оплаты','НМЦ лота']},
+ {id:'assess', n:'Оценка заявок', items:['Метод оценки','Опыт: критерий оценки','Опыт: чем подтверждать (оценка)']},
+ {id:'reqs', n:'Требования', items:['Наличие обеспечения заявки','Форма обеспечения заявки','Размер обеспечения заявки',
+   'Требуется обеспечение исполнения','Форма обеспечения исполнения','Размер обеспечения исполнения','Ограничения по банку',
+   'Срок действия БГ','Опыт: требуется для допуска','Опыт: чем подтверждать (допуск)','Есть перечень обязательных документов']},
 ];
 
 /* Каждое поле = один критерий: как его спросить в чате (q/d/chips) и как показать
    его в редактируемом списке «Критерии подбора» (ops/values, delta — вес влияния на счётчик).
    d — короткая подсказка человеку (НЕ инструкция для LLM-классификатора из CSV — та написана
    для машинного разбора текста документации, а не как формулировка вопроса живому человеку). */
-/* Раньше это была красивая, но выдуманная цифра (10213), и весь счётчик
-   двигался по вручную заданным «весам» критериев (delta), никак не связанным
-   с реальной базой — отсюда и ощущение неполной достоверности. Теперь везде,
-   где показывается число процедур (в начале и после любого фильтра), это
-   настоящий подсчёт по реальной базе PROCS через движок relevantности
-   (rankMatches) и реальные предикаты (REAL_FILTER_PRED) — см. addFilter(),
-   критRunning(), recomputeWorkingSet(). */
 const BASE_TOTAL = PROCS.length;
-/* Порог «выборка уже достаточно узкая, можно предлагать результат» — доля
-   от реального размера базы, а не фиксированное число вроде 500 (которое
-   было привязано к старым сценарным цифрам и с реальным счётчиком не
-   имело смысла: реальная база меньше 500 целиком). */
-const GOOD_ENOUGH = Math.max(10, Math.round(BASE_TOTAL*0.15));
+/* ---------- честный счётчик, без иллюзий (13.08.2026) ----------
+   История: сначала счётчик был честным (S.workingSet.length), но реальная
+   демо-база была слишком маленькой (42 процедуры на запрос), и заказчик
+   попросил создать видимость большой площадки — сделали двухфазную
+   механику (фейковый убывающий счётчик → «раскрытие» в реальное число),
+   потом сглаживание перехода. Но сам скачок «сужается-сужается, а потом
+   внезапно другое число» всё равно оставался заметен в части сценариев —
+   сглаживание уменьшало проблему, но не убирало её как класс.
+   Корневая причина — маленькая настоящая база. Решение: не имитировать
+   большую базу, а СГЕНЕРИРОВАТЬ её по-настоящему (см. QUERY_BATCH_SIZE в
+   genQueryProcs — ровно 10 480 реальных процедур на любой запрос).
+   Раскрывать больше нечего — показанное число ВСЕГДА настоящее, с самого
+   первого запроса, никакой отдельной «фазы 2» не существует. */
+/* Порог «выборка уже достаточно узкая, можно предлагать результат» —
+   абсолютное число (не доля от размера базы: она теперь большая и
+   постоянная — важно, что для ЧЕЛОВЕКА можно просмотреть, а не пропорция).
+   Было занижено до 20 при переходе на честную генерацию 10 480 процедур —
+   вернули 500, как было до этого (просьба заказчика, 13.08.2026): CTA
+   «Готово, я собрал подборку» должен появляться, как только реальная
+   выборка сузилась до ~500, а не только когда она сузилась почти до
+   упора. */
+const GOOD_ENOUGH = 500;
+/* Единая точка пересчёта S.total — раньше здесь была развилка по фазе, а
+   до этого — отдельная функция displayTotal()/масштабирование. Оставлена
+   как функция (а не разбросана по всем местам как S.workingSet.length
+   напрямую), чтобы не трогать десяток мест вызова — но теперь это просто
+   честное значение. */
+function currentTotal(){
+  return S.workingSet.length;
+}
+/* Названия/вопросы/тултипы — по CSV «Критерии из документации - Новые
+   названия» (файл на диске, 12.08.2026): для каждого поля здесь label —
+   новое отображаемое имя, tip — «Краткое пояснение (tooltip)» из файла,
+   q — «Вопрос чат-бота» из файла (заменяет прежнюю сценарную формулировку).
+   d оставлен пустым там, где теперь есть tip — иначе пояснение дублировалось
+   бы дважды (инлайн под вопросом и во всплывающей подсказке). Кто НЕ
+   тронут — «Дата начала приёма заявок» и «Требуется обеспечение
+   исполнения» (в этом файле для них вообще нет строк — оставлены как
+   было, по вашему решению), а также «ИНН заказчика» (по вашему решению
+   остаётся отдельным полем, не объединяется с «Заказчик»).
+   ВАЖНО: у «Тип торгов», «Способ проведения» и «Статус торгов» — реально
+   расширенные (не только текстом) наборы значений, см. TT_TYPES/
+   METHOD_VALS/REAL_FILTER_PRED выше — по вашему решению добавить варианты
+   из файла «как есть» и сделать их настоящими, а не просто чипами. */
 const FIELD_DEFS = {
  /* --- параметры закупки --- */
- 'Тип торгов': {ops:['Равен'], values:['Коммерческие торги','44-ФЗ','223-ФЗ','615-ПП РФ'], delta:2000,
-  q:'Какие типы торгов вас интересуют? В каких торгах вы готовы участвовать?',
-  d:'Выберите источники и режимы проведения торгов: регулируемые закупки по 44-ФЗ и 223-ФЗ, коммерческие торги.',
-  chips:['Коммерческие торги','44-ФЗ','223-ФЗ','615-ПП РФ']},
- 'Способ проведения': {ops:['Равен'], values:['Аукцион','Конкурс','Запрос котировок','Запрос предложений'], delta:900,
-  q:'Какой способ проведения торгов вам подходит?', d:'',
-  chips:['Аукцион','Конкурс','Запрос котировок','Запрос предложений']},
- 'Статус торгов': {ops:['Равен'], values:['Активные','Архивные'], delta:4155,
-  q:'В каком статусе вы ищите процедуры?', d:'Активные, архивные.',
-  chips:['Активные','Архивные']},
+ 'Тип торгов': {ops:['Равен'], values:['Любые торги','44-ФЗ','223-ФЗ','615-ПП','Коммерческие закупки','Портал Поставщиков'], delta:2000,
+  q:'Какие типы торгов вас интересуют? В каких торгах вы готовы участвовать?', d:'',
+  chips:['Любые торги','44-ФЗ','223-ФЗ','615-ПП','Коммерческие закупки','Портал Поставщиков'],
+  tip:'Выберите источники и режимы проведения торгов: регулируемые закупки по 44-ФЗ и 223-ФЗ, коммерческие торги, а также процедуры из внешних источников, например Портала поставщиков.'},
+ 'Способ проведения': {ops:['Равен'], values:['Аукцион на повышение','Аукцион на понижение','Конкурс','Запрос предложений','Запрос котировок','Продажа посредством публичного предложения'], delta:900,
+  q:'Как проводится закупка?', d:'',
+  chips:['Аукцион на повышение','Аукцион на понижение','Конкурс','Запрос предложений','Запрос котировок','Продажа посредством публичного предложения'],
+  tip:'Например: конкурс, аукцион, запрос предложений и др.'},
+ 'Статус торгов': {ops:['Равен'], values:['Активные','Архивные','Все'], delta:4155,
+  q:'На каком этапе находится закупка?', d:'',
+  chips:['Активные','Архивные','Все'],
+  tip:'Например: прием заявок, рассмотрение или подведение итогов.'},
  'Тип предмета': {ops:['Равен'], values:['Товары','Работы','Услуги'], delta:600,
-  q:'Что вам нужно — товары, работы или услуги?', d:'Тип предмета закупки по составу.',
-  chips:['Товары','Работы','Услуги']},
+  q:'Что закупают?', d:'',
+  chips:['Товары','Работы','Услуги'],
+  label:'Тип продукции', tip:'Позволяет выбрать закупки товаров, работ или услуг.'},
  'МСП / СОНО': {ops:['Равен'], values:['Да','Нет'], delta:300,
-  q:'Важно, чтобы закупка была ограничена участием МСП/СОНО?', d:'Малое и среднее предпринимательство / социально ориентированные НКО.',
-  chips:['Да','Нет']},
+  q:'Закупка только для МСП или СОНО?', d:'',
+  chips:['Да','Нет'],
+  label:'Только для МСП / СОНО', tip:'Ограничивает поиск закупками для отдельных категорий участников.'},
  'Категория ОКПД 2': {ops:['Равен','Содержит'], values:null, delta:250,
-  q:'Нужно уточнить по категории ОКПД 2?', d:'Например: «плитка керамическая», «компьютерная техника».',
-  chips:['Указать категорию']},
+  q:'Какая категория продукции нужна?', d:'',
+  chips:['Указать категорию'],
+  label:'Категория продукции (ОКПД2)', tip:'Найдите закупки по классификатору продукции и услуг.'},
 
  /* --- оплата --- */
  'Способ оплаты': {ops:['Равен'], values:['Аванс','Комбо','Отсрочка','Постоплата'], delta:500,
-  q:'Какой способ оплаты вам подходит?', d:'Аванс, постоплата, отсрочка или комбинация вариантов.',
-  chips:['Аванс','Комбо','Отсрочка','Постоплата']},
+  q:'Как будут оплачивать?', d:'',
+  chips:['Аванс','Комбо','Отсрочка','Постоплата'],
+  tip:'Позволяет найти закупки с подходящими условиями оплаты (предоплата, постоплата и др.).'},
  'Аванс: процент': {ops:['Больше','Меньше','Равен'], values:null, delta:200,
-  q:'Какой минимальный процент аванса вам нужен?', d:'Доля предоплаты от суммы контракта, %.',
-  chips:['От 30%','От 50%','Не менее 100%']},
+  q:'Какой предусмотрен аванс?', d:'',
+  chips:['От 30%','От 50%','Не менее 100%'],
+  label:'Размер аванса', tip:'Отберите закупки с необходимым размером авансового платежа.'},
  'Событие для оплаты': {ops:['Равен'], values:['Подписание актов','Приемка','Поставка','Счет'], delta:200,
-  q:'От какого события должен отсчитываться срок оплаты?', d:'',
-  chips:['Подписание актов','Приемка','Поставка','Счет']},
+  q:'После чего оплатят?', d:'',
+  chips:['Подписание актов','Приемка','Поставка','Счет'],
+  label:'Условие оплаты', tip:'Например: после поставки, приемки товара, подписания документов или выполнения этапа работ.'},
  'Этапность платежей': {ops:['Равен'], values:['Единовременно','По этапам','График платежей'], delta:200,
-  q:'Как должны идти платежи — одним платежом или поэтапно?', d:'',
-  chips:['Единовременно','По этапам','График платежей']},
+  q:'Оплата будет поэтапной?', d:'',
+  chips:['Единовременно','По этапам','График платежей'],
+  label:'Этапы оплаты', tip:'Позволяет найти закупки с единовременной или поэтапной оплатой.'},
  'Срок оплаты': {ops:['Меньше','Больше','Равен'], values:null, delta:200,
-  q:'Есть ограничения по сроку оплаты после приёмки?', d:'В днях.',
-  chips:['Не более 10 дней','Не более 20 дней']},
+  q:'Когда оплатят?', d:'',
+  chips:['Не более 10 дней','Не более 20 дней'],
+  tip:'Позволяет найти закупки с подходящим сроком оплаты после исполнения обязательств.'},
 
  /* --- обеспечение --- */
  'Наличие обеспечения заявки': {ops:['Равен'], values:['Да','Нет'], delta:250,
-  q:'Готовы вносить обеспечение заявки?', d:'',
-  chips:['Да','Нет']},
+  q:'Нужно ли обеспечение заявки?', d:'',
+  chips:['Да','Нет'],
+  label:'Обеспечение заявки', tip:'Показывает, требуется ли обеспечение заявки для участия.'},
  'Форма обеспечения заявки': {ops:['Равен'], values:['Деньги','БГ или деньги'], delta:200,
-  q:'В какой форме готовы вносить обеспечение заявки?', d:'',
-  chips:['Деньги','БГ или деньги']},
+  q:'Какое обеспечение принимается?', d:'',
+  chips:['Деньги','БГ или деньги'],
+  label:'Вид обеспечения', tip:'Выберите допустимый способ предоставления обеспечения.'},
  'Размер обеспечения заявки': {ops:['Меньше','Больше','Равен'], values:null, delta:150,
-  q:'Какой размер обеспечения заявки для вас приемлем?', d:'В процентах от НМЦК.',
-  chips:['До 1%','До 3%']},
+  q:'Какой размер обеспечения заявки?', d:'',
+  chips:['До 1%','До 3%'],
+  tip:'Позволяет ограничить закупки по сумме обеспечения заявки.'},
  'Требуется обеспечение исполнения': {ops:['Равен'], values:['Да','Нет'], delta:300,
   q:'Готовы предоставлять обеспечение исполнения контракта?', d:'',
   chips:['Да','Нет']},
  'Форма обеспечения исполнения': {ops:['Равен'], values:['Деньги','БГ или деньги'], delta:200,
-  q:'В какой форме готовы вносить обеспечение исполнения?', d:'',
-  chips:['Деньги','БГ или деньги']},
+  q:'Каким способом предоставить обеспечение исполнения?', d:'',
+  chips:['Деньги','БГ или деньги'],
+  tip:'Выберите допустимую форму обеспечения исполнения договора.'},
  'Размер обеспечения исполнения': {ops:['Меньше','Больше','Равен'], values:null, delta:150,
-  q:'Какой размер обеспечения исполнения для вас приемлем?', d:'В процентах от НМЦК.',
-  chips:['До 10%','До 20%']},
+  q:'Какой размер обеспечения исполнения договора?', d:'',
+  chips:['До 10%','До 20%'],
+  tip:'Позволяет найти закупки с подходящим размером обеспечения исполнения.'},
  'Ограничения по банку': {ops:['Равен'], values:['Да','Нет'], delta:200,
-  q:'Важно отсутствие ограничений по перечню банков для гарантии?', d:'',
-  chips:['Да','Нет']},
+  q:'Есть ли требования к банку?', d:'',
+  chips:['Да','Нет'],
+  label:'Требования к банку', tip:'Показывает требования к банку, выдавшему гарантию.'},
  'Срок действия БГ': {ops:['Больше','Меньше'], values:null, delta:150,
-  q:'Есть требования к сроку действия банковской гарантии?', d:'В днях.',
-  chips:['Не менее 60 дней','Не менее 120 дней']},
+  q:'На какой срок нужна банковская гарантия?', d:'',
+  chips:['Не менее 60 дней','Не менее 120 дней'],
+  label:'Срок действия банковской гарантии', tip:'Позволяет отобрать закупки с необходимым сроком действия банковской гарантии.'},
 
  /* --- опыт участника --- */
  'Опыт: требуется для допуска': {ops:['Равен'], values:['Да','Нет'], delta:300,
-  q:'Готовы подтверждать опыт для допуска к процедуре?', d:'',
-  chips:['Да','Нет']},
+  q:'Нужен ли опыт выполнения аналогичных договоров?', d:'',
+  chips:['Да','Нет'],
+  label:'Требуется опыт', tip:'Позволяет найти закупки с требованиями к опыту участника.'},
  'Опыт: чем подтверждать (допуск)': {ops:['Равен'], values:['Договоры из ЕИС','Любые договоры'], delta:150,
-  q:'Каким опытом готовы подтверждать допуск?', d:'',
-  chips:['Договоры из ЕИС','Любые договоры']},
+  q:'Чем подтверждается опыт?', d:'',
+  chips:['Договоры из ЕИС','Любые договоры'],
+  label:'Подтверждение опыта', tip:'Показывает, какие документы подтверждают опыт участника.'},
  'Опыт: критерий оценки': {ops:['Равен'], values:['Да','Нет'], delta:200,
-  q:'Важно, чтобы опыт учитывался при оценке заявок?', d:'',
-  chips:['Да','Нет']},
+  q:'Учитывается ли опыт при оценке заявок?', d:'',
+  chips:['Да','Нет'],
+  label:'Опыт влияет на оценку', tip:'Позволяет найти закупки, где опыт влияет на выбор победителя.'},
  'Опыт: чем подтверждать (оценка)': {ops:['Равен'], values:['Договоры из ЕИС','Любые договоры'], delta:150,
-  q:'Каким опытом готовы подтверждать при оценке?', d:'',
-  chips:['Договоры из ЕИС','Любые договоры']},
+  q:'Какие документы влияют на оценку опыта?', d:'',
+  chips:['Договоры из ЕИС','Любые договоры'],
+  label:'Подтверждение опыта для оценки', tip:'Показывает, какие документы необходимо предоставить для оценки опыта.'},
 
  /* --- условия исполнения --- */
  'Место поставки': {ops:['Равен','Содержит'], delta:1200,
   values:Object.keys(CITY_REGION),
-  q:'Куда необходимо поставить товар?', d:'Ограничьте поиск по региону, городу или адресу поставки.',
-  chips:['Ярославль','Москва','Санкт-Петербург','Казань','Екатеринбург']},
+  q:'Куда необходимо поставить товар?', d:'',
+  chips:['Ярославль','Москва','Санкт-Петербург','Казань','Екатеринбург'],
+  tip:'Ограничьте поиск по региону, городу или адресу поставки.'},
  'Режим поставки': {ops:['Равен'], values:['Разово','По заявкам','Партиями'], delta:300,
-  q:'Как должна проходить поставка?', d:'Разово, по заявкам по мере потребности или партиями по графику.',
-  chips:['Разово','По заявкам','Партиями']},
+  q:'Как должна происходить поставка?', d:'',
+  chips:['Разово','По заявкам','Партиями'],
+  label:'График поставки', tip:'Например: единовременно, партиями или по графику.'},
  'Эквивалент': {ops:['Равен'], values:['Допускается','Не допускается','Условно'], delta:200,
-  q:'Важна возможность поставки эквивалента вместо указанного товара?', d:'',
-  chips:['Допускается','Не допускается','Условно']},
+  q:'Можно предложить аналог?', d:'',
+  chips:['Допускается','Не допускается','Условно'],
+  label:'Допускается аналог', tip:'Показывает, допускается ли поставка эквивалентной продукции.'},
  'Национальный режим': {ops:['Равен'], values:['Да','Нет'], delta:400,
-  q:'Важны ограничения по национальному режиму (ПП РФ 1875)?', d:'',
-  chips:['Да','Нет']},
+  q:'Есть требования по национальному режиму?', d:'',
+  chips:['Да','Нет'],
+  tip:'Показывает ограничения и требования к происхождению товаров.'},
  'Срок КП': {ops:['Больше','Меньше'], values:null, delta:150,
-  q:'Есть ограничения по сроку действия ценового предложения?', d:'В днях.',
-  chips:['Не менее 15 дней','Не менее 30 дней']},
+  q:'Как долго должно действовать мое предложение?', d:'',
+  chips:['Не менее 15 дней','Не менее 30 дней'],
+  label:'Срок действия предложения', tip:'Минимальный срок, в течение которого предложение участника должно оставаться действительным.'},
 
  /* --- сроки закупки --- */
  'Дата публикации торгов': {ops:['Диапазон','До','После'], values:null, delta:700,
-  q:'Ограничить поиск по дате публикации процедуры?', d:'Укажите период публикации.',
-  chips:['За последние 7 дней','За последние 30 дней']},
+  q:'Когда опубликована закупка?', d:'',
+  chips:['За последние 7 дней','За последние 30 дней'],
+  label:'Дата публикации', tip:'Ограничьте поиск по дате публикации процедуры.'},
  'Дата начала приёма заявок': {ops:['Диапазон','До','После'], values:null, delta:300,
   q:'Есть ограничения по дате начала приёма заявок?', d:'',
   chips:['С сегодняшнего дня','За последние 7 дней']},
  'Окончание приема заявок': {ops:['Диапазон','До','После'], values:null, delta:3556,
-  q:'Есть ли ограничения по дате приема предложений?', d:'',
-  chips:['Не позже 7 дней','Не позже 14 дней']},
+  q:'До какого числа принимают заявки?', d:'',
+  chips:['Не позже 7 дней','Не позже 14 дней'],
+  tip:'Позволяет найти закупки с подходящим сроком подачи предложения.'},
  'Метод оценки': {ops:['Равен'], values:['Только цена','Не только цена'], delta:300,
-  q:'Как должен определяться победитель — только по цене или с учётом других критериев?', d:'',
-  chips:['Только цена','Не только цена']},
+  q:'Как будут выбирать победителя?', d:'',
+  chips:['Только цена','Не только цена'],
+  label:'Способ выбора победителя', tip:'Показывает, по каким критериям будут оцениваться заявки.'},
 
  /* --- цена и документы --- */
  'НМЦ лота': {ops:['Равен','Диапазон','Больше','Меньше'], values:null, delta:800,
-  q:'Есть ли ограничения по НМЦ лота?', d:'',
-  chips:['До 500 000 ₽','До 1 000 000 ₽']},
+  q:'Какая стоимость закупки?', d:'',
+  chips:['До 500 000 ₽','До 1 000 000 ₽'],
+  label:'Стоимость закупки', tip:'Позволяет ограничить поиск по стоимости закупки.'},
  'Есть перечень обязательных документов': {ops:['Равен'], values:['Да','Нет'], delta:200,
-  q:'Готовы собирать расширенный пакет документов для участия?', d:'',
-  chips:['Да','Нет']},
- 'Классификатор строительных ресурсов (КСР)': {ops:['Равен','Содержит'], values:null, delta:150,
-  q:'Нужно уточнить по классификатору строительных ресурсов (КСР)?', d:'',
-  chips:['Указать код КСР']},
+  q:'Какие документы необходимо предоставить?', d:'',
+  chips:['Да','Нет'],
+  label:'Обязательные документы', tip:'Показывает перечень документов, обязательных для участия.'},
+ /* По CSV это да/нет-критерий («Используется классификатор строительных
+    ресурсов?»), а не свободный поиск по коду — раньше здесь по инерции
+    оставался старый вариант (values:null, «Указать код КСР»), из-за чего
+    и вопрос, и предикат не соответствовали новому названию/вопросу, а
+    показываемое значение (p.tags) совпадало с ОКПД2 — оба поля читали
+    один и тот же список тегов. Теперь у процедуры есть отдельный настоящий
+    признак p.usesKSR (см. генератор), и КСР показывает Да/Нет, а не
+    повторяет ОКПД2. */
+ 'Классификатор строительных ресурсов (КСР)': {ops:['Равен'], values:['Да','Нет'], delta:150,
+  q:'Используется классификатор строительных ресурсов?', d:'',
+  chips:['Да','Нет'],
+  label:'КСР', tip:'Позволяет искать закупки с использованием КСР.'},
 
  /* --- заказчик --- */
  'Заказчик': {ops:['Равен','Содержит'], values:null, delta:350,
-  q:'Кто должен быть заказчиком закупки?', d:'Укажите наименование заказчика.',
-  chips:['Указать заказчика']},
+  q:'Кто проводит закупку?', d:'',
+  chips:['Указать заказчика'],
+  tip:'Позволяет найти закупки конкретного заказчика или организатора.'},
  'Регион заказчика': {ops:['Равен'], values:Object.values(CITY_REGION), delta:200,
-  q:'В каком регионе находится заказчик?', d:'',
-  chips:['Ярославская обл.','г. Москва','г. Санкт-Петербург']},
+  q:'Где находится заказчик?', d:'',
+  chips:['Ярославская обл.','г. Москва','г. Санкт-Петербург'],
+  label:'Регион заказчика', tip:'Ограничьте поиск закупками заказчиков из выбранного региона.'},
  'ИНН заказчика': {ops:['Равен'], values:null, delta:500,
   q:'Кто проводит закупку?', d:'Укажите ИНН заказчика.',
   chips:['Ввести ИНН заказчика']},
@@ -1194,6 +1620,50 @@ const LLM_NUMERIC_NOTES = {
  'Размер обеспечения исполнения':'Размер обеспечения исполнения контракта, в процентах от НМЦК.',
  'НМЦ лота':'Начальная (максимальная) цена лота в рублях.'
 };
+/* Детерминированный (без LLM) разбор ДВУХ чисел с общей единицей измерения
+   («от 3 до 15 млн», «с 30 по 60 дней», «700000-950000») — реальный случай
+   13.08.2026: ввод «нмц от 3 до 15 млн» уходил в LLM, схема classify_answer
+   умеет вернуть только ОДНО число, модель вернула 3 000 000 с оператором
+   «Диапазон», а «Диапазон» без второй границы отображается как «≈примерно» —
+   то есть вторая граница диапазона(«до 15 млн») терялась полностью и молча.
+   Детерминированный путь пробуем ДО обращения к LLM для полей, где ops
+   вообще допускает 'Диапазон' — то же архитектурное решение, что и у
+   isMetaIntentOnly() (см. выше): там, где можно проверить надёжно в JS, не
+   полагаемся на дисциплину модели.
+   Единица измерения («млн»/«тыс») в русской речи обычно называется один раз,
+   в конце («от 3 до 15 млн» — оба числа в миллионах) — если у второго числа
+   есть суффикс, а у первого нет, применяем тот же множитель к обоим. */
+function extractNumsWithUnit(text){
+  const re=/(\d[\d\s]*(?:[.,]\d+)?)\s*(миллион\w*|млн\.?|тысяч\w*|тыс\.?)?/gi;
+  const out=[]; let m;
+  while((m=re.exec(text))){
+    const digits=m[1].replace(/\s+/g,'');
+    const val=parseFloat(digits.replace(',', '.'));
+    if(isNaN(val)) continue;
+    out.push({val, unit:(m[2]||'').toLowerCase(), index:m.index, len:m[0].length});
+  }
+  return out;
+}
+function unitMult(unit){
+  if(unit.startsWith('млн')||unit.startsWith('миллион')) return 1e6;
+  if(unit.startsWith('тыс')) return 1e3;
+  return 1;
+}
+function parseNumberRange(text){
+  const t=String(text||'').toLowerCase();
+  const nums=extractNumsWithUnit(t);
+  if(nums.length<2) return null;
+  const [a,b]=nums;
+  const between=t.slice(a.index+a.len, b.index);
+  if(!/до|по|-|–|—/.test(between)) return null;
+  const unit=a.unit||b.unit;
+  const mult=unitMult(unit);
+  const min=Math.round(Math.min(a.val,b.val)*mult);
+  const max=Math.round(Math.max(a.val,b.val)*mult);
+  if(!min && !max) return null;
+  if(min===max) return null;
+  return {min, max};
+}
 /* Категории обработки поля: 'enum' — выбрать одно из FIELD_DEFS[name].values,
    'numeric' — извлечь число под один из допустимых операторов, 'text' — поле
    и так свободный текст (заказчик/ИНН/ОКПД2/КСР) — там LLM не нужна, там уже
@@ -1205,8 +1675,18 @@ function llmFieldKind(f){
   if(f.ops.some(o=>numericOps.includes(o))) return 'numeric';
   return 'text';
 }
+/* ВАЖНО (реальный случай, 13.08.2026): на фразу «хочу уточнить график
+   поставки» — где нет вообще никакой информации о значении, только
+   намерение обсудить критерий — модель тем не менее вернула конкретное
+   значение вместо recognized:false. Явный отдельный пункт про это ниже —
+   раньше подразумевалось общей формулировкой «если не описывает вариант»,
+   но, как показала практика, этого недостаточно: модель должна явно
+   понимать, что «упоминание темы критерия» ≠ «указание значения». Это
+   вторая линия защиты — первая (детерминированная, без обращения к LLM)
+   в isMetaIntentOnly()/freeCriterionFromChat(). */
 function buildLlmSystemPrompt(name, f){
   const hints = LLM_FIELD_HINTS[name];
+  const antiGuess = 'Если пользователь просто называет тему/критерий или выражает намерение его обсудить/уточнить («хочу уточнить …», «расскажите про …», «что по …») — но НЕ указывает конкретное значение — это НЕ является ответом ни на один вариант. В этом случае recognized:false, даже если тема явно относится к вопросу. Никогда не выбирай правдоподобное значение только потому, что критерий упомянут — подставлять предположение вместо честного «не распознано» строго запрещено.';
   if(Array.isArray(f.values)){
     const lines = f.values.map(v=>{
       const h = hints && hints.values && hints.values[v];
@@ -1215,10 +1695,10 @@ function buildLlmSystemPrompt(name, f){
     return ['Ты — модуль распознавания ответов в чате закупочной системы «Умный поиск».',
       'Пользователю задан вопрос анкеты, он ответил свободным текстом. Определи, какому из допустимых вариантов соответствует его сообщение.',
       `Вопрос: ${f.q}`,
-      'Допустимые варианты (выбери РОВНО один, дословно как написано ниже, включая регистр):',
+      'Допустимые варианты:',
       lines,
-      'Если сообщение не описывает ни один из вариантов или пользователь уходит от ответа — верни null.',
-      'Ответь СТРОГО одним JSON-объектом без пояснений и без markdown: {"value": "<вариант дословно или null>", "confidence": <число 0..1>}'
+      antiGuess,
+      'Вызови функцию classify_answer: recognized=true и value из списка выше — только если сообщение однозначно называет конкретное значение.'
     ].join('\n');
   }
   const note = LLM_NUMERIC_NOTES[name] || '';
@@ -1227,8 +1707,8 @@ function buildLlmSystemPrompt(name, f){
     `Вопрос: ${f.q}`,
     note ? `Пояснение: ${note}` : '',
     `Допустимые операторы: ${f.ops.join(', ')}.`,
-    'Если в тексте нет распознаваемого числа — верни null вместо value.',
-    'Ответь СТРОГО одним JSON-объектом без пояснений и без markdown: {"value": <число или null>, "op": "<один из операторов выше>", "confidence": <число 0..1>}'
+    antiGuess,
+    'Вызови функцию classify_answer: recognized=true и value с числом — только если в тексте реально есть распознаваемое число.'
   ].filter(Boolean).join('\n');
 }
 function extractJsonBlock(s){
@@ -1343,10 +1823,10 @@ function reset(){
   S = {
     screen:'landing', tipOff:false, chat:[], busy:false, picked:[], animatedCount:0,
     total:BASE_TOTAL, narrowing:false, navCol:false,
-    filters:[], usedItems:[], queue:[], qi:0, curField:null, history:[], carPage:0,
+    filters:[], usedItems:[], skipped:[], queue:[], qi:0, curField:null, history:[], carPage:0,
     workingSet:PROCS.map(p=>p.id),
     openDD:null, critModalOpen:false, curTplRules:null,
-    gridOpen:false, cardOpen:false, curProc:null, cardAnimId:null, checked:[],
+    gridOpen:false, cardOpen:false, curProc:null, cardAnimId:null, checked:[], gridPage:0,
     openChats:true, openFold:false, sortField:'pub', sortDir:'desc', sortPendingField:null,
     navScreen:null, folderTab:'active', curFolder:null,
     curTemplate:null, templateEdit:false, folderItemsTab:'active', dcolAnimKey:null,
@@ -1404,11 +1884,16 @@ function avatarMenu(){
 function toggleDD(id){ S.openDD = (S.openDD===id) ? null : id; render(); }
 function ddField(id, kind, scope, idx, value, options){
   const open = S.openDD===id;
+  /* Для оператора (kind==='o') показываем понятную словесную формулировку
+     (OP_LABEL), а не служебное название («Больше» → «больше или равно») —
+     внутреннее значение (что реально сохраняется и участвует в
+     REAL_FILTER_PRED) не меняется, меняется только то, что видит человек. */
+  const disp = v => kind==='o' ? (OP_LABEL[v]||v) : v;
   return `<span class="esel ${kind==='o'?'op':''}" data-dd="${id}">
     <button type="button" class="ddtrig" onclick="event.stopPropagation();toggleDD('${id}')">
-      <span>${esc(value||'—')}</span><span style="color:var(--ink4)">▾</span></button>
+      <span>${esc(disp(value)||'—')}</span><span style="color:var(--ink4)">▾</span></button>
     ${open?`<div class="ddmenu">${options.map(o=>`<div class="ddopt ${o===value?'on':''}"
-      onclick="event.stopPropagation();selectDD('${scope}','${kind}',${idx},'${esc(o).replace(/'/g,"\\'")}')">${esc(o)}</div>`).join('')}</div>`:''}
+      onclick="event.stopPropagation();selectDD('${scope}','${kind}',${idx},'${esc(o).replace(/'/g,"\\'")}')">${esc(disp(o))}</div>`).join('')}</div>`:''}
   </span>`;
 }
 /* scope различает, какой массив редактируется одним и тем же переиспользуемым
@@ -1439,39 +1924,49 @@ function selectDD(scope, kind, idx, value){
    настоящие предикаты (REAL_FILTER_PRED) для каждого применённого критерия
    по порядку. Раньше счётчик двигался по вручную заданным «весам» (delta),
    вообще не привязанным к реальной базе, — отсюда и ощущение бутафории.
-   Если конкретный шаг сужает список до 0 (в демо-базе не находится точного
-   совпадения, например по случайному ИНН) — не обнуляем список показа,
-   а оставляем прошлый шаг, чтобы грид не показывал пусто раньше времени. */
+   Раньше также был «предохранитель»: если конкретный шаг сужал список до
+   0, мы тихо оставляли прошлый (непустой) шаг, чтобы грид не показывал
+   пусто. По прямой просьбе заказчика (12.08.2026) это убрано — «если
+   результат равен нулю, сервис должен прямо писать, что торгов нет», а
+   не маскировать ноль под «почти ничего». Настоящий ноль на каком-то шаге
+   теперь так и остаётся нулём — по нему (первому пустому этапу) честно
+   определяется, какой именно критерий обнулил выборку, см.
+   zeroCauseFilter(). */
 function computeStages(){
   let ws = rankMatches(S.query);
   const stages = [];
   S.filters.forEach(r=>{
     const pred = REAL_FILTER_PRED[r.f];
     if(pred){
-      const narrowed = ws.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, r.v, r.o); });
-      if(narrowed.length) ws = narrowed;
+      ws = ws.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, r.v, r.o); });
     }
     stages.push({filter:r, ws});
   });
   return stages;
 }
+/* Строки running-счётчика в модалке «Критерии подбора» — настоящие числа
+   на каждом шаге (computeStages), без какой-либо развилки по фазе — фазы
+   больше нет. */
 function critRunning(){
-  let prev = rankMatches(S.query).length;
+  let prevReal = rankMatches(S.query).length;
   return computeStages().map(s=>{
-    const total = s.ws.length;
-    const delta = Math.max(0, prev-total);
-    prev = total;
-    return {...s.filter, total, delta};
+    const realTotal = s.ws.length;
+    const delta = Math.max(0, prevReal-realTotal);
+    prevReal = realTotal;
+    return {...s.filter, total:realTotal, realTotal, delta};
   });
 }
 function addFilter(f, o, v, delta){
   S.filters.push({f, o, v, delta});
   const pred = REAL_FILTER_PRED[f];
   if(pred){
-    const narrowed = S.workingSet.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, v, o); });
-    if(narrowed.length) S.workingSet = narrowed;
+    /* Раньше здесь стоял «if(narrowed.length)» — реальный ноль тихо
+       игнорировался, и S.workingSet оставался прежним. Теперь честно
+       применяем, даже если совпадений не осталось — см. комментарий у
+       computeStages(). */
+    S.workingSet = S.workingSet.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, v, o); });
   }
-  S.total = S.workingSet.length;
+  S.total = currentTotal();
 }
 function addFilterRow(){
   const used = S.filters.map(r=>r.f);
@@ -1495,11 +1990,11 @@ function recomputeWorkingSet(){
 }
 function applyCrit(){
   recomputeWorkingSet();
-  S.total = S.workingSet.length;
+  S.total = currentTotal();
   closeCritModal();
 }
 function critRow(r,i){
-  const warn = r.total<=5;
+  const warn = r.realTotal!=null && r.realTotal<=5;
   return `<div class="crow ${warn?'warn':''}">
     <span class="cidx">${i+1}.</span>
     ${ddField('cf'+i,'f','chat',i,r.f,Object.keys(FIELD_DEFS))}
@@ -1566,7 +2061,13 @@ function renderSaveTemplateModal(){
         </div>
       </div>
       <table class="ktab" style="margin-top:6px">
-        ${rows.map(r=>`<tr><td style="color:var(--ink3);width:35%">${esc(r.f)}</td><td style="color:var(--ink4);width:20%">${esc(r.o)}</td><td>${esc(r.v)}</td></tr>`).join('')}
+        ${rows.map(r=>{
+          const fdef = FIELD_DEFS[r.f];
+          const numeric = fdef && llmFieldKind(fdef)==='numeric';
+          const opCell = numeric ? '' : (OP_LABEL[r.o]||r.o);
+          const valCell = numeric ? numValLabel(r.o, r.v) : esc(r.v);
+          return `<tr><td style="color:var(--ink3);width:35%">${esc(r.f)}</td><td style="color:var(--ink4);width:20%">${esc(opCell)}</td><td>${valCell}</td></tr>`;
+        }).join('')}
       </table>
       <div class="sffoot" style="justify-content:flex-end">
         <button class="sfbtn pri" style="flex:none;padding:11px 26px" onclick="doSaveTemplate()">Сохранить</button>
@@ -1674,7 +2175,7 @@ function pick(x){ document.getElementById('qIn').value=x; startS(); }
 function viewOnboard(){
   return `<div class="onb"><div class="in">
     <h1>Добро пожаловать!</h1>
-    <div class="lead">Умный поиск с ИИ помогает быстрее находить подходящие процедуры, уточнять критерии подбора и понимать, на чём закупки действительно стоит обратить внимание.</div>
+    <div class="lead">Умный поиск с ИИ помогает быстрее находить подходящие процедуры, уточнять критерии подбора и понимать, на какие закупки действительно стоит обратить внимание.</div>
     <div style="font-size:13px;font-weight:700;margin-bottom:14px">Что умеет умный поиск с ИИ:</div>
     <div class="feat"><div class="fic">📄</div><div><div class="ft">Анализ документации</div>
       <div class="fd">ИИ анализирует закупочную документацию и ведёт поиск даже по неформализованным параметрам</div></div></div>
@@ -1696,27 +2197,28 @@ function snapshotChat(){
   if(!entry) return;
   entry.state = {
     query:S.query, chat:S.chat, total:S.total, picked:S.picked,
-    filters:S.filters, usedItems:S.usedItems, queue:S.queue, qi:S.qi,
+    filters:S.filters, usedItems:S.usedItems, skipped:S.skipped, queue:S.queue, qi:S.qi,
     curField:S.curField, animatedCount:S.animatedCount, history:S.history, carPage:S.carPage,
-    workingSet:S.workingSet,
+    workingSet:S.workingSet, gridPage:S.gridPage,
   };
   entry.c = S.total;
 }
 function startS(){
   snapshotChat();
   const v=(document.getElementById('qIn').value||'Поставляем строительные материалы. Плитку, клей, сухие смеси, краску.').trim();
-  const matched=rankMatches(v); /* настоящее число совпадений по базе — не сценарная цифра */
+  const matched=rankMatches(v); /* настоящий пакет процедур под этот запрос (см. genQueryProcs — ровно QUERY_BATCH_SIZE) */
+  S.activeChat=null; S.navScreen=null;
+  S.screen='chat'; S.query=v; S.chat=[]; S.animatedCount=0; S.picked=[];
+  S.filters=[]; S.usedItems=[]; S.skipped=[]; S.queue=[]; S.qi=0; S.curField=null; S.history=[]; S.carPage=0;
+  S.workingSet=matched; S.total=matched.length;
+  S.gridOpen=false; S.cardOpen=false; S.checked=[]; S.gridPage=0;
   const chatId='c'+Date.now()+Math.floor(Math.random()*1000);
-  CHATS.unshift({id:chatId, n:v.length>22?v.slice(0,20)+'…':v, c:matched.length, state:null});
-  S.activeChat=chatId; S.navScreen=null;
-  S.screen='chat'; S.query=v; S.chat=[]; S.animatedCount=0; S.total=matched.length; S.picked=[];
-  S.filters=[]; S.usedItems=[]; S.queue=[]; S.qi=0; S.curField=null; S.history=[]; S.carPage=0;
-  S.workingSet=matched;
-  S.gridOpen=false; S.cardOpen=false; S.checked=[];
+  CHATS.unshift({id:chatId, n:v.length>22?v.slice(0,20)+'…':v, c:S.total, state:null});
+  S.activeChat=chatId;
   say('me', esc(v));
   render();
   botThink(()=>{
-    say('bot', `Понял. Ищу закупки по запросу «${esc(v)}».<br><span style="color:var(--ink3);font-size:12.5px">Найдено <b class="num">${fmt(matched.length)}</b> процедур</span><br><b>Выберите несколько критериев, по которым нужно уточнить поиск:</b>`, 'carousel');
+    say('bot', `Понял. Ищу закупки по запросу «${esc(v)}».<br><span style="color:var(--ink3);font-size:12.5px">Найдено <b class="num">${fmt(S.total)}</b> процедур</span><br><b>Выберите несколько критериев, по которым нужно уточнить поиск:</b>`, 'carousel');
     render();
   }, 900);
 }
@@ -1735,32 +2237,39 @@ function startFromTemplate(name){
   const chatId='c'+Date.now()+Math.floor(Math.random()*1000);
   S.navScreen=null; S.activeChat=chatId; S.screen='chat'; S.query=query;
   S.chat=[]; S.animatedCount=0; S.picked=[];
-  S.filters=[]; S.usedItems=[]; S.queue=[]; S.qi=0; S.curField=null; S.history=[]; S.carPage=0;
-  S.gridOpen=false; S.cardOpen=false; S.checked=[];
+  S.filters=[]; S.usedItems=[]; S.skipped=[]; S.queue=[]; S.qi=0; S.curField=null; S.history=[]; S.carPage=0;
+  S.gridOpen=false; S.cardOpen=false; S.checked=[]; S.gridPage=0;
   let ws = rankMatches(query);
   filterRules.forEach(r=>{
     const def = FIELD_DEFS[r.f];
     S.filters.push({f:r.f, o:r.o, v:r.v, delta: def?def.delta:200});
     S.usedItems.push(r.f);
     const pred = REAL_FILTER_PRED[r.f];
-    if(pred){
-      const narrowed = ws.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, r.v, r.o); });
-      if(narrowed.length) ws = narrowed;
-    }
+    /* Раньше здесь стоял тот же «предохранитель», что и во всех остальных
+       местах приложения когда-то (if(narrowed.length) ws=narrowed) — реальный
+       ноль от одного из критериев шаблона тихо игнорировался, и подборка
+       оставалась на предыдущем (непустом) шаге. По тому же принципу, что и
+       everywhere else в этой сессии — честный ноль остаётся нулём. */
+    if(pred){ ws = ws.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, r.v, r.o); }); }
   });
   S.workingSet = ws; S.total = ws.length;
   CHATS.unshift({id:chatId, n:(query||name).length>22?(query||name).slice(0,20)+'…':(query||name), c:S.total, state:null});
   say('me', `Начать подбор по шаблону «${esc(name)}»`);
   render();
-  botThink(()=>{ finishGood(); }, 800);
+  /* Раньше — безусловный finishGood(): даже настоящий ноль/огромная
+     неотфильтрованная выборка от шаблона показывались как «Готово, я собрал
+     подборку». continueOrFinish() — та же честная развилка, что и везде:
+     ноль/мало → showZero()/showLow(), всё ещё большая → предложить уточнить
+     дальше, только по-настоящему узкая — CTA. */
+  botThink(()=>{ continueOrFinish(); }, 800);
 }
 function newChat(){
   snapshotChat();
   S.screen='start'; S.navScreen=null; S.activeChat=null; S.query='';
-  S.chat=[]; S.animatedCount=0; S.total=BASE_TOTAL; S.picked=[];
-  S.filters=[]; S.usedItems=[]; S.queue=[]; S.qi=0; S.curField=null; S.history=[]; S.carPage=0;
-  S.workingSet=PROCS.map(p=>p.id);
-  S.gridOpen=false; S.cardOpen=false; S.curProc=null; S.cardAnimId=null; S.checked=[];
+  S.chat=[]; S.animatedCount=0; S.picked=[];
+  S.filters=[]; S.usedItems=[]; S.skipped=[]; S.queue=[]; S.qi=0; S.curField=null; S.history=[]; S.carPage=0;
+  S.workingSet=PROCS.map(p=>p.id); S.total=S.workingSet.length;
+  S.gridOpen=false; S.cardOpen=false; S.curProc=null; S.cardAnimId=null; S.checked=[]; S.gridPage=0;
   S.critModalOpen=false; S.openDD=null;
   render();
 }
@@ -1773,9 +2282,8 @@ function openChat(id){
     Object.assign(S, entry.state);
     S.activeChat=id; S.screen='chat';
   } else {
-    S.activeChat=id; S.screen='chat'; S.chat=[]; S.history=[];
-    S.workingSet=rankMatches(entry?entry.n:'');
-    S.total=S.workingSet.length;
+    S.activeChat=id; S.screen='chat'; S.chat=[]; S.history=[]; S.skipped=[]; S.gridPage=0;
+    S.workingSet=rankMatches(entry?entry.n:''); S.total=S.workingSet.length;
   }
   render();
 }
@@ -1814,11 +2322,38 @@ function mRender(m, fresh){
   else if(m.x==='cta') extra=ctaCard();
   else if(m.x==='more') extra=moreBlock();
   else if(m.x==='zero'){
+    /* Настоящий ноль — просьба заказчика (13.08.2026, уточнено 13.08.2026):
+       кнопка не должна незаметно сносить сразу несколько критериев за
+       один клик. Сначала честно ищем ОДИН критерий, чьё снятие само по
+       себе уже даёт непустой результат (singleFilterFixIndex) — если
+       находится, кнопка снимает ровно его (removeFilterAt). Если такого
+       нет (к нулю привело именно СОЧЕТАНИЕ нескольких критериев) —
+       кнопка прямо называет, сколько и какие будут сняты (removeZeroCause),
+       вместо того чтобы удалить несколько молча. Архив — вторично,
+       приглушённой кнопкой в стиле «Назад» (chip.back), не крупным CTA. */
+    const single = singleFilterFixIndex();
+    const causeIdx = zeroCauseIndex();
+    const backBtn = S.history.length ? `<button class="chip back" onclick="goBack()">← Назад</button>` : '';
+    let removeBtn = '';
+    if(single>=0){
+      removeBtn = `<button class="bigb" style="width:100%;margin-top:10px" onclick="removeFilterAt(${single})">✕ Убрать критерий «${esc(S.filters[single].f)}»</button>`;
+    } else if(causeIdx>=0){
+      const names = S.filters.slice(causeIdx).map(r=>r.f);
+      removeBtn = `<button class="bigb" style="width:100%;margin-top:10px" onclick="removeZeroCause()">✕ Убрать несколько критериев (${names.length}): «${names.map(n=>esc(n)).join('», «')}»</button>`;
+    }
+    extra = `${removeBtn}
+      <div class="chiprow" style="margin-top:8px">
+        <button class="chip back" onclick="keepArchive()">📦 Показать архивные процедуры</button>
+        ${backBtn}
+      </div>`;
+  }
+  else if(m.x==='low'){
+    /* Мало, но не ноль — без архива (просьба заказчика): единственное
+       действие здесь — попробовать убрать критерий, который сузил сильнее
+       всего, плюс общий «Назад» (просьба заказчика, 13.08.2026). */
     const lastF = S.filters[S.filters.length-1];
-    extra = `<div class="chiprow">
-      ${lastF?`<button class="chip" onclick="removeCriterion()">Убрать критерий «${esc(lastF.f)}»</button>`:''}
-      <button class="chip" onclick="keepArchive()">Оставить архивные процедуры</button>
-    </div>`;
+    const backBtn = S.history.length ? `<button class="chip back" onclick="goBack()">← Назад</button>` : '';
+    extra = (lastF||backBtn) ? `<div class="chiprow">${lastF?`<button class="chip" onclick="removeCriterion()">Убрать критерий «${esc(lastF.f)}»</button>`:''}${backBtn}</div>` : '';
   }
   return `<div class="m bot"${st}><div class="b">${m.h}${extra}</div></div>`;
 }
@@ -1839,11 +2374,44 @@ function scrollChat(){ const e=document.getElementById('chatSc'); if(e) e.scroll
    кнопка справа (раньше стрелки стояли по бокам от карточек, а кнопка
    вообще пропадала, пока ничего не выбрано, — теперь видна всегда, просто
    неактивна). */
-const CAR_PAGE_SIZE = 3;
+const CAR_PAGE_SIZE = 4;
 const CAR_PAGES = Math.ceil(BLOCKS.length/CAR_PAGE_SIZE);
 function carPage(delta){
   S.carPage = Math.max(0, Math.min(CAR_PAGES-1, (S.carPage||0)+delta));
   render();
+}
+/* label/tip — на нескольких полях (см. таблицу «Критерии УПП») пробуем
+   более понятные названия и тултипы вместо сырого технического имени
+   поля. Внутренний ключ (S.filters/BLOCKS/REAL_FILTER_PRED) не трогаем —
+   меняется только то, что видит пользователь. */
+function fieldLabel(name){ const f=FIELD_DEFS[name]; return (f&&f.label)||name; }
+/* Слова видимого названия поля БЕЗ фильтра по длине tokenize() (>3 символа) —
+   короткие аббревиатуры вроде «ИНН» (3 буквы) и «КСР» (3 буквы, внутри
+   «Классификатор строительных ресурсов (КСР)») через tokenize() отсекаются
+   целиком, из-за чего эти поля были в принципе невозможно найти по
+   свободному тексту («ИНН 7612345678» → toks=["7612345678"], «инн»
+   потерялось, ни exact-, ни scored-проход угадывания поля их не видел —
+   реальный баг 13.08.2026, найден в ходе аудита «проверь все фильтры»). */
+function labelWordsRaw(name){
+  return String(fieldLabel(name)||'').toLowerCase().split(/[^a-zа-яё0-9]+/).filter(Boolean);
+}
+function rawWords(s){
+  return String(s||'').toLowerCase().split(/[^a-zа-яё0-9]+/).filter(Boolean);
+}
+/* Убираем из текста слова названия поля (целиком, без учёта регистра) —
+   используется, когда САМО название/аббревиатуру поля пользователь печатает
+   вперемешку со значением («ОКПД2 70.33.93.273», «заказчик ООО Ромашка»):
+   без этого шага «ОКПД2» приклеивало цифру «2» к началу кода (после
+   которую все нецифровые/неточечные символы вырезаются), а «заказчик»
+   ломал substring-поиск по названию организации (реальный баг 13.08.2026). */
+function stripLabelWords(text, name){
+  let s = ' '+String(text||'')+' ';
+  labelWordsRaw(name).forEach(w=>{
+    if(w.length<2) return;
+    const re = new RegExp('([^a-zа-яё0-9]|^)'+w+'([^a-zа-яё0-9]|$)', 'gi');
+    s = s.replace(re, '$1$2');
+  });
+  return s.trim().replace(/\s+/g,' ');
 }
 function carousel(){
   const page = S.carPage||0;
@@ -1852,13 +2420,24 @@ function carousel(){
     const items = b.items.filter(it=>!S.usedItems.includes(it));
     const body = items.length ? items.map(it=>{
         const key=b.id+'|'+it; const idx=S.picked.indexOf(key); const sel=idx>=0;
-        return `<button class="cchip ${sel?'sel':''}" onclick="togglePick('${key}')">${sel?`<span style="opacity:.8;margin-right:5px">${idx+1}</span>`:''}${it}</button>`;
+        const tip = FIELD_DEFS[it] && FIELD_DEFS[it].tip;
+        /* Раньше подсказка висела на title у самой кнопки — по вашему
+           тесту не открывалась (нативный title внутри <button> у части
+           браузеров/окружений либо не всплывает, либо требует слишком
+           долгого наведения без движения мыши). Теперь — тот же явный
+           значок ⓘ с title, что уже рабочий в вопросах анкеты
+           (askQuestion()) — видимая, кликабельная по наведению подсказка,
+           а не невидимый атрибут. stopPropagation — чтобы наведение/клик
+           по значку не переключал выбор чипа. */
+        const tipIcon = tip ? ` <span class="tipi" title="${esc(tip)}" onclick="event.stopPropagation()">ⓘ</span>` : '';
+        return `<button class="cchip ${sel?'sel':''}" onclick="togglePick('${key}')">${sel?`<span style="opacity:.8;margin-right:5px">${idx+1}</span>`:''}${esc(fieldLabel(it))}${tipIcon}</button>`;
       }).join('') : `<div style="font-size:11.5px;color:var(--ink4)">Учтено ✓</div>`;
     return `<div class="bcard"><div class="bt">${b.n}</div><div class="bl">${body}</div></div>`;
   }).join('');
   const canContinue = S.picked.length>0;
   return `<div class="carw">
     <div class="carrow">${cards}</div>
+    ${backRow()}
     <div class="carfoot">
       <div class="carnavbtns">
         <button class="carnb" onclick="carPage(-1)" ${page<=0?'disabled':''}>‹</button>
@@ -1886,20 +2465,21 @@ function nextQuestion(){
 function askQuestion(){
   const name = S.queue[S.qi]; const f = FIELD_DEFS[name];
   S.curField = name;
-  say('bot', `<b>${f.q}</b>${f.d?`<div style="margin-top:4px;color:var(--ink3);font-size:12.5px">${f.d}</div>`:''}`, 'question');
+  const tip = f.tip ? ` <span class="tipi" title="${esc(f.tip)}">ⓘ</span>` : '';
+  say('bot', `<b>${f.q}</b>${tip}${f.d?`<div style="margin-top:4px;color:var(--ink3);font-size:12.5px">${f.d}</div>`:''}`, 'question');
   render();
 }
 function questionChips(){
   const f = FIELD_DEFS[S.curField]; if(!f) return '';
   const opts=[...f.chips,'Не важно','Пропустить вопрос','К списку вопросов'];
-  const back = S.history.length ? `<button class="chip back" onclick="goBack()">← Назад</button>` : '';
+  const back = S.history.length ? `<div class="backrow"><button class="chip back" onclick="goBack()">← Назад</button></div>` : '';
   /* «Указать заказчика» / «Ввести ИНН заказчика» / «Указать категорию» и т.п. —
      не готовый ответ, а подсказка «впишите значение в поле ниже». Раньше клик
      по ней вёл себя как обычный чип и подставлял этот текст-подсказку в
      качестве значения фильтра — человек ничего не написал, а фильтр как будто
      появлялся. Такие чипы теперь не отвечают на вопрос, а просто передают
      фокус в поле ввода, чтобы человек напечатал реальное значение сам. */
-  return `<div class="chiprow">${back}${opts.map(c=>{
+  return `${back}<div class="chiprow">${opts.map(c=>{
     const isPrompt = /^(Указать|Ввести)\s/i.test(c);
     if(isPrompt) return `<button class="chip prompt" onclick="focusFreeInput()">✎ ${c}</button>`;
     return `<button class="chip ${/Пропустить|К списку|Не важно/.test(c)?'muted':''}" onclick="answerQ('${esc(c)}')">${c}</button>`;
@@ -1912,7 +2492,7 @@ function focusFreeInput(){
 function answerQ(val){
   const name = S.curField; const f = FIELD_DEFS[name];
   /* снимок «до ответа» — по нему кнопка «Назад» откатывает 1-3 шага подряд */
-  S.history.push({qi:S.qi, filtersLen:S.filters.length, usedLen:S.usedItems.length, chatLen:S.chat.length});
+  S.history.push({qi:S.qi, filtersLen:S.filters.length, usedLen:S.usedItems.length, skippedLen:S.skipped.length, chatLen:S.chat.length});
   say('me', val);
   const last=S.chat.filter(m=>m.x==='question').pop(); if(last) last.x=null;
   render();
@@ -1923,7 +2503,12 @@ function answerQ(val){
   if(val!=='Не важно' && val!=='Пропустить вопрос'){
     addFilter(name, f.ops[0], val, f.delta);
     checkZero();
-    if(S.total<=5) return; // checkZero уже показал сообщение — дальше не идём
+    if(S.workingSet.length<=5) return; // checkZero уже показал сообщение — дальше не идём
+  } else {
+    /* «Не важно»/«Пропустить вопрос» не создают фильтр, но вопрос всё
+       равно считается закрытым — иначе блок в railSteps() никогда не
+       получит галочку, если пользователь осознанно пропустил критерий. */
+    if(!S.skipped.includes(name)) S.skipped.push(name);
   }
   advanceAfterAnswer();
 }
@@ -1937,31 +2522,69 @@ function advanceAfterAnswer(){ S.qi++; botThink(()=>{ nextQuestion(); }, 850); }
 async function freeAnswerToQuestion(text){
   const name = S.curField; const f = FIELD_DEFS[name];
   const kind = llmFieldKind(f);
-  S.history.push({qi:S.qi, filtersLen:S.filters.length, usedLen:S.usedItems.length, chatLen:S.chat.length});
+  S.history.push({qi:S.qi, filtersLen:S.filters.length, usedLen:S.usedItems.length, skippedLen:S.skipped.length, chatLen:S.chat.length});
   say('me', esc(text));
   const last=S.chat.filter(m=>m.x==='question').pop(); if(last) last.x=null;
   if(kind==='text'){
     render();
-    addFilter(name, f.ops[0], text, f.delta);
+    /* Убираем слова названия поля из значения — см. stripLabelWords: без
+       этого «ОКПД2 70.33.93.273», напечатанное в ответ на активный вопрос,
+       сохраняло бы «2» из самого слова «ОКПД2» слева от кода. */
+    addFilter(name, f.ops[0], stripLabelWords(text, name) || text, f.delta);
     checkZero();
-    if(S.total<=5) return;
+    if(S.workingSet.length<=5) return;
     advanceAfterAnswer();
     return;
+  }
+  /* Диапазон («от 3 до 15 млн») — детерминированно, до LLM, см.
+     parseNumberRange(). */
+  if(kind==='numeric' && f.ops.includes('Диапазон')){
+    const range = parseNumberRange(text);
+    if(range){
+      render();
+      applyFreeAnswer(name, f, text, {ok:true, value:`${range.min}-${range.max}`, op:'Диапазон'});
+      return;
+    }
   }
   S.busy = true; render();
   const result = await llmExtract(text, name, f);
   S.busy = false;
   applyFreeAnswer(name, f, text, result);
 }
+/* «Не менее 60 дней» и «60 дней» — разные условия, но подтверждение боту
+   раньше показывало для обоих просто «60» (оператор терялся, если он
+   совпадал с ops[0] у поля). Теперь для числовых полей оператор всегда
+   виден рядом со значением — символом, а не служебным названием. */
+/* «Больше»/«Меньше» — служебные названия операторов (REAL_FILTER_PRED/
+   numMatches трактуют их включительно: «Больше» = ≥, «Меньше» = ≤ — см.
+   numMatches). Раньше это никак не отражалось в тексте: «Не менее 60
+   дней» подтверждалось как «Больше» (или вообще без оператора — если он
+   совпадал с ops[0] у поля), а «больше» по-русски читается как строгое
+   «>», не «не менее» (≥) — путало пользователя. Теперь везде, где
+   оператор показывается человеку (подтверждение в чате, дропдаун в
+   «Критериях подбора»), — однозначная словесная формулировка, а не голое
+   служебное название. */
+const OP_LABEL = {'Больше':'больше или равно','Меньше':'меньше или равно','Равен':'равен','Диапазон':'≈ примерно','До':'до','После':'после'};
+/* Значение может быть настоящим диапазоном "min-max" (см. parseNumberRange) —
+   для него «≈ примерно» (OP_LABEL['Диапазон']) вводит в заблуждение: обе
+   границы известны точно, показываем «от X до Y», а не приближение. */
+function numValLabel(op, value){
+  const range = parseRangeStr(value);
+  if(range) return `от ${fmt(range.min)} до ${fmt(range.max)}`;
+  return `${OP_LABEL[op]||op} ${esc(String(value))}`;
+}
 function applyFreeAnswer(name, f, rawText, result){
   if(result.ok && result.value!=null && result.value!==''){
     const op = result.op || f.ops[0];
-    const noteOp = (op!==f.ops[0]) ? ` · ${esc(op)}` : '';
-    say('bot', `Понял «${esc(rawText)}» как: <b>${esc(String(result.value))}</b>${noteOp}`);
+    const kind = llmFieldKind(f);
+    const shown = kind==='numeric'
+      ? numValLabel(op, result.value)
+      : esc(String(result.value));
+    say('bot', `Понял «${esc(rawText)}» как: <b>${shown}</b>`);
     addFilter(name, op, result.value, f.delta);
     render();
     checkZero();
-    if(S.total<=5) return;
+    if(S.workingSet.length<=5) return;
     advanceAfterAnswer();
     return;
   }
@@ -1990,12 +2613,12 @@ function goBack(){
   if(!S.history.length) return;
   const cp = S.history.pop();
   S.qi = cp.qi;
-  S.filters.length = cp.filtersLen; S.usedItems.length = cp.usedLen; S.chat.length = cp.chatLen;
+  S.filters.length = cp.filtersLen; S.usedItems.length = cp.usedLen; S.skipped.length = cp.skippedLen||0; S.chat.length = cp.chatLen;
   /* S.workingSet тоже нужно откатить, а не только S.filters — иначе после
      «Назад» список кандидатов остаётся сужен по уже отменённому ответу.
      Пересчитываем с нуля от исходного запроса по оставшимся критериям. */
   recomputeWorkingSet();
-  S.total = S.workingSet.length;
+  S.total = currentTotal();
   const lastMsg = S.chat[S.chat.length-1];
   if(lastMsg) lastMsg.x = 'question';
   S.curField = S.queue[cp.qi];
@@ -2003,16 +2626,23 @@ function goBack(){
   S.busy = false;
   render();
 }
-function afterQueue(){
-  if(S.total<=5) return showLow();
-  /* Раньше переход к результату («вот ваша подборка», кнопка-CTA в чате)
-     срабатывал только когда у пользователя кончались блоки критериев для
-     выбора — независимо от того, насколько на самом деле узкая выборка.
-     Теперь довольно и реального небольшого числа процедур (GOOD_ENOUGH,
-     доля от размера базы) — тогда предлагаем перейти к результату сразу,
-     не дожидаясь, пока пользователь исчерпает все возможные критерии. */
+/* Единая точка «что показать после того, как выборка изменилась» — ноль/мало,
+   уже достаточно узко (<=GOOD_ENOUGH) или критериев для уточнения больше не
+   осталось → CTA (finishGood), иначе — предложить уточнить ещё. Раньше это
+   решение принимал только afterQueue() (после прохождения всей очереди
+   вопросов), а во всех местах, где выборка меняется ПОСЛЕ уже показанного
+   CTA (снятие критерия при нуле/малом результате, снятие критерия чипом на
+   CTA, запуск по шаблону) — стояла грубая проверка «<=5 → мало, иначе сразу
+   Готово», игнорирующая GOOD_ENOUGH: могло получиться, что после снятия
+   критерия остаётся, скажем, 6000 процедур, а бот всё равно бодро говорит
+   «Готово, я собрал подборку», хотя тот же самый размер выборки в обычном
+   потоке (afterQueue) продолжил бы спрашивать критерии дальше — нечестная
+   рассинхронизация одного и того же решения (найдено сквозным тестированием
+   разных сценариев, 13.08.2026). */
+function continueOrFinish(){
+  if(S.workingSet.length<=5) return handleSmallResult();
   const remaining = BLOCKS.some(b=>b.items.some(it=>!S.usedItems.includes(it)));
-  if(S.total<=GOOD_ENOUGH || !remaining){
+  if(S.workingSet.length<=GOOD_ENOUGH || !remaining){
     finishGood();
   } else {
     S.carPage=0;
@@ -2020,48 +2650,169 @@ function afterQueue(){
     render();
   }
 }
+function afterQueue(){ continueOrFinish(); }
 /* Проверяем обнуление сразу после каждого ответа (а не только когда пройдены
-   все вопросы очереди) — чтобы не заставлять доклик��вать оставшиеся вопросы,
+   все вопросы очереди) — чтобы не заставлять докликивать оставшиеся вопросы,
    если выборка уже обнулилась, скажем, на 7-м из 10. */
 function checkZero(){
-  if(S.total<=5) botThink(()=>{ showLow(); }, 700);
+  if(S.workingSet.length<=5) botThink(()=>{ handleSmallResult(); }, 700);
 }
-/* Реальное число архивных процедур по текущему запросу (без учёта фильтра
-   «Статус торгов», если он уже сузил список до активных) — раньше здесь
-   было захардкожено 3124, никак не связано с базой. */
-function realArchiveCount(){
-  return rankMatches(S.query).filter(id=>{
-    const p=PROCS.find(x=>x.id===id); return p && p.status==='Архивные';
-  }).length;
+/* «Ноль» и «мало, но не ноль» — РАЗНЫЕ сообщения (просьба заказчика,
+   12.08.2026): при настоящем нуле нельзя говорить «почти нет» — только
+   прямо «торгов нет», с указанием критерия, который обнулил выборку, и
+   предложением архива. При просто малом непустом результате (скажем, 4
+   процедуры) — архив предлагать НЕ нужно, это не тот сценарий. */
+function handleSmallResult(){
+  if(S.workingSet.length===0) showZero(); else showLow();
 }
+/* Первый (по порядку применения) этап, на котором пересечение стало
+   пустым — раз дальше по пустому множеству фильтровать уже нечего, это и
+   есть критерий, который обнулил выборку. Без предположений/угадывания —
+   реальный перебор реальных предикатов (computeStages), тот же, что
+   используется в модалке «Критерии подбора». Индекс нужен отдельно от
+   имени — по нему честно откатываем именно до этой точки (см.
+   removeZeroCause()), а не наугад убираем последний применённый фильтр,
+   который мог быть вообще ни при чём. */
+function zeroCauseIndex(){
+  const stages = computeStages();
+  return stages.findIndex(s=>s.ws.length===0);
+}
+function zeroCauseFilter(){
+  const idx = zeroCauseIndex();
+  return idx>=0 ? S.filters[idx].f : null;
+}
+/* Раньше кнопка «убрать критерий» при нуле всегда откатывала критерий-
+   виновника И ВСЁ, что было применено после него (см. removeZeroCause) —
+   гарантированно работало, но иногда сносило сразу несколько критериев
+   за один клик, что выглядело неожиданно резко. Теперь сначала честно
+   пробуем найти ОДИН критерий, чьё снятие само по себе (при сохранении
+   всех остальных) уже даёт непустой результат — пробуем сперва самого
+   виновника (обычно самый ожидаемый вариант), потом остальные по порядку.
+   Если такой единственный критерий находится — снимаем только его.
+   Если нет (к нулю приводит СОЧЕТАНИЕ нескольких критериев, а не один) —
+   -1, и тогда единственный рабочий вариант — снять несколько сразу
+   (removeZeroCause), но об этом теперь честно предупреждаем в тексте, а
+   не тихо удаляем много без объяснения. */
+function singleFilterFixIndex(){
+  if(!S.filters.length) return -1;
+  const causeIdx = zeroCauseIndex();
+  const order = [causeIdx, ...S.filters.map((_,i)=>i).filter(i=>i!==causeIdx)];
+  for(const i of order){
+    if(i<0) continue;
+    let ws = rankMatches(S.query);
+    S.filters.forEach((r,j)=>{
+      if(j===i) return;
+      const pred = REAL_FILTER_PRED[r.f];
+      if(pred) ws = ws.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, r.v, r.o); });
+    });
+    if(ws.length>0) return i;
+  }
+  return -1;
+}
+/* Снимает РОВНО один критерий по индексу — используется, когда
+   singleFilterFixIndex() нашёл, что этого достаточно (в отличие от
+   removeCriterion(), которая всегда снимает последний, и removeZeroCause(),
+   которая может снять несколько). */
+function removeFilterAt(idx){
+  const rem = S.filters[idx];
+  if(!rem) return;
+  S.filters.splice(idx,1);
+  const ui = S.usedItems.indexOf(rem.f); if(ui>=0) S.usedItems.splice(ui,1);
+  const si = S.skipped.indexOf(rem.f); if(si>=0) S.skipped.splice(si,1);
+  recomputeWorkingSet();
+  S.total = currentTotal();
+  say('me', `Убрать критерий «${esc(rem.f)}»`);
+  const last=S.chat.filter(m=>m.x==='zero'||m.x==='low').pop(); if(last) last.x=null;
+  render();
+  botThink(()=>{ continueOrFinish(); }, 850);
+}
+/* Настоящий ноль — «торгов нет», без «почти», с точным виновником
+   (zeroCauseFilter) и большой кнопкой перехода в архив (см. mRender:
+   m.x==='zero') — доступ к архиву предлагаем ТОЛЬКО здесь, не в showLow(). */
+function showZero(){
+  const single = singleFilterFixIndex();
+  let extra = '';
+  if(single>=0){
+    extra = `<br>Критерий «${esc(S.filters[single].f)}» полностью исключил все совпадения.`;
+  } else {
+    const causeIdx = zeroCauseIndex();
+    if(causeIdx>=0){
+      const names = S.filters.slice(causeIdx).map(r=>r.f);
+      extra = `<br>К нулю привело сочетание нескольких критериев: «${names.map(n=>esc(n)).join('», «')}» — снять придётся не один, а сразу несколько.`;
+    }
+  }
+  say('bot', `По вашим критериям процедур нет.${extra}`, 'zero');
+  render();
+}
+/* «Мало, но не ноль» — без предложения архива (просьба заказчика): в
+   сценарии «осталось 4 процедуры» это не обнуление, а нормальный (пусть и
+   узкий) результат — архив здесь неуместен. */
 function showLow(){
   const lastF = S.filters[S.filters.length-1];
-  const archN = realArchiveCount();
-  say('bot', `Найдено <b class="num">${fmt(S.total)}</b> процедур.<br>В данный момент почти нет торгов, отвечающих на сто процентов вашим критериям.${lastF?`<br>Критерий «${esc(lastF.f)}» сильно сократил результаты выборки.`:''}<br>Есть <b class="num">${fmt(archN)}</b> архивных процедур по данным критериям за последние 24 месяца.`, 'zero');
+  say('bot', `Найдено <b class="num">${fmt(S.workingSet.length)}</b> процедур.<br>В данный момент почти нет торгов, отвечающих на сто процентов вашим критериям.${lastF?`<br>Критерий «${esc(lastF.f)}» сильно сократил результаты выборки.`:''}`, 'low');
   render();
 }
 function removeCriterion(){
   const rem = S.filters.pop();
+  /* Как и в removeAppliedFilter() — отмена критерия должна убирать поле и
+     из usedItems, иначе оно навсегда останется «выбранным для уточнения»
+     в глазах railSteps()/hasMoreCriteria(), хотя сам критерий уже снят. */
+  if(rem){
+    const ui = S.usedItems.indexOf(rem.f); if(ui>=0) S.usedItems.splice(ui,1);
+    const si = S.skipped.indexOf(rem.f); if(si>=0) S.skipped.splice(si,1);
+  }
   recomputeWorkingSet();
-  S.total = S.workingSet.length;
+  S.total = currentTotal();
   say('me', rem?`Убрать критерий «${rem.f}»`:'Убрать последний критерий');
-  const last=S.chat.filter(m=>m.x==='zero').pop(); if(last) last.x=null;
+  const last=S.chat.filter(m=>m.x==='zero'||m.x==='low').pop(); if(last) last.x=null;
   render();
-  botThink(()=>{ finishGood(); }, 850);
+  /* Убрали критерий — не факт, что это сразу решило дело: перепроверяем
+     заново (может, ноль/мало сохранились из-за другого критерия), а не
+     бодро идём в finishGood() вслепую, как было раньше. */
+  botThink(()=>{ continueOrFinish(); }, 850);
 }
-function keepArchive(){
-  say('me', 'Оставить архивные процедуры');
-  const last=S.chat.filter(m=>m.x==='zero').pop(); if(last) last.x=null;
+/* Для настоящего нуля (просьба заказчика, 13.08.2026): предлагаем не
+   наугад «убрать последний критерий» (как removeCriterion() — тот мог
+   быть вообще ни при чём), а гарантированно вернуть хотя бы одну
+   процедуру — убираем именно критерий-виновника (zeroCauseIndex) И всё,
+   что было применено ПОСЛЕ него: те более поздние критерии применялись
+   уже к пустому множеству, их эффект на самом деле неизвестен, оставлять
+   их как есть означало бы снова рисковать нулём. */
+function removeZeroCause(){
+  const idx = zeroCauseIndex();
+  if(idx<0) return;
+  const removed = S.filters.slice(idx).map(r=>r.f);
+  S.filters.length = idx;
+  removed.forEach(name=>{
+    const ui = S.usedItems.indexOf(name); if(ui>=0) S.usedItems.splice(ui,1);
+    const si = S.skipped.indexOf(name); if(si>=0) S.skipped.splice(si,1);
+  });
+  recomputeWorkingSet();
+  S.total = currentTotal();
+  say('me', removed.length>1 ? `Убрать критерии: ${removed.map(n=>`«${esc(n)}»`).join(', ')}` : `Убрать критерий «${esc(removed[0])}»`);
+  const last=S.chat.filter(m=>m.x==='zero'||m.x==='low').pop(); if(last) last.x=null;
   render();
-  botThink(()=>{
-    const archIds = rankMatches(S.query).filter(id=>{
-      const p=PROCS.find(x=>x.id===id); return p && p.status==='Архивные';
-    });
-    if(archIds.length) S.workingSet = archIds;
-    S.total = S.workingSet.length;
-    say('bot', `Хорошо, показываю и архивные процедуры, подходящие под ваши критерии.`, 'cta');
-    render();
-  }, 700);
+  botThink(()=>{ continueOrFinish(); }, 850);
+}
+/* «← Назад» — везде, где есть что отменить (S.history), а не только в
+   вопросе анкеты и на CTA, как было раньше (просьба заказчика,
+   13.08.2026). goBack() всегда откатывает к состоянию ПЕРЕД последним
+   отвеченным вопросом анкеты — это верно независимо от того, что показано
+   на экране прямо сейчас (карусель, приглашение уточнить, «почти
+   ничего»/«ничего не найдено»), потому что запись в S.history делается
+   именно в момент ответа на вопрос, а не при каждом клике вообще. */
+function backRow(){
+  return S.history.length ? `<div class="backrow"><button class="chip back" onclick="goBack()">← Назад</button></div>` : '';
+}
+/* По просьбе заказчика (13.08.2026) — клик по «Показать архивные процедуры»
+   ничего реально не переключает (архивных данных в этом прототипе нет),
+   а просто показывает то же информационное сообщение (toast), что и в
+   остальных местах приложения при похожей ситуации — например, конец
+   реальных данных при перелистывании грида (см. gridPage()). Ничего в
+   состоянии не меняется — ни S.workingSet, ни чат, поэтому и render() не
+   нужен, как и в gridPage(). */
+function keepArchive(){
+  toast('Здесь появятся архивные процедуры по вашим критериям — в этом прототипе архивных данных пока нет.');
 }
 function finishGood(){
   say('bot', `Готово. Я собрал подборку по вашим требованиям.`, 'cta');
@@ -2069,20 +2820,26 @@ function finishGood(){
   setTimeout(()=>botThink(()=>{ say('bot','Хотите сделать подборку точнее? Я могу дополнительно проверить:','more'); render(); }, 700), 100);
 }
 function ctaCard(){
-  /* Показывает то же число, что увидит человек, кликнув дальше в грид
-     (sortedResultProcs().length), а не «красивый» нарративный S.total —
-     иначе обещание в чате и факт в гриде расходятся (ровно так и было
-     с «10 213» наверху при реальных 20 строках в списке). */
+  /* Число на CTA — всегда S.total = S.workingSet.length (см. currentTotal()) —
+     настоящее, ровно то же, что покажет грид при открытии. */
   const q=(S.query||'').trim(); const short=q.length>28?q.slice(0,26)+'…':q;
   /* Раньше отменить критерий или вернуться на шаг назад можно было, только
      пока открыт сам вопрос анкеты (чип «← Назад» жил внутри questionChips()) —
      как только появлялся CTA, кнопка «Назад» пропадала совсем, а отменить
      конкретный уже применённый критерий можно было только через модалку
      «Критерии подбора». Теперь оба действия доступны прямо под CTA. */
-  const chips = S.filters.map((r,i)=>`<span class="critchip">${esc(r.f)}: ${esc(String(r.v))}<button class="critx" onclick="event.stopPropagation();removeAppliedFilter(${i})" title="Убрать критерий">✕</button></span>`).join('');
+  /* Для числовых критериев показываем словесный оператор/диапазон
+     (numValLabel), а не голое сохранённое значение — иначе, например,
+     диапазон «3000000-15000000» выглядел бы как случайное число с
+     дефисом, а «не менее 60» превращалось обратно в голое «60». */
+  const chips = S.filters.map((r,i)=>{
+    const fdef = FIELD_DEFS[r.f];
+    const valDisp = (fdef && llmFieldKind(fdef)==='numeric') ? numValLabel(r.o, r.v) : esc(String(r.v));
+    return `<span class="critchip">${esc(r.f)}: ${valDisp}<button class="critx" onclick="event.stopPropagation();removeAppliedFilter(${i})" title="Убрать критерий">✕</button></span>`;
+  }).join('');
   const backBtn = S.history.length ? `<button class="chip back" onclick="event.stopPropagation();goBack()">← Назад</button>` : '';
   return `<div class="ctac" onclick="openGrid()">
-    <div class="ic">🔍</div><div class="tx">${esc(short||'Подборка')}</div><div class="cn num">${fmt(sortedResultProcs().length)}</div></div>
+    <div class="ic">🔍</div><div class="tx">${esc(short||'Подборка')}</div><div class="cn num">${fmt(S.total)}</div></div>
     ${(chips||backBtn)?`<div class="critchips">${chips}${backBtn}</div>`:''}`;
 }
 /* Отмена конкретного (не обязательно последнего) уже применённого критерия
@@ -2095,35 +2852,271 @@ function removeAppliedFilter(i){
   S.filters.splice(i,1);
   const ui = S.usedItems.indexOf(rem.f);
   if(ui>=0) S.usedItems.splice(ui,1);
+  const si = S.skipped.indexOf(rem.f);
+  if(si>=0) S.skipped.splice(si,1);
   recomputeWorkingSet();
-  S.total = S.workingSet.length;
+  S.total = currentTotal();
   say('me', `Убрать критерий «${rem.f}»`);
   render();
-  botThink(()=>{ if(S.total<=5) showLow(); else finishGood(); }, 700);
+  botThink(()=>{ continueOrFinish(); }, 700);
 }
 function freeT(){
   const el=document.getElementById('freeIn'); const t=(el.value||'').trim(); if(!t||S.busy) return;
   el.value='';
   const pendingQ = S.chat.filter(m=>m.x==='question').pop();
   if(pendingQ) return freeAnswerToQuestion(t);
-  say('me', esc(t));
+  /* Раньше «да» в ответ на «Хотите сделать подборку точнее?» падало в общую
+     ветку ниже — бот отвечал «Учёл. Продолжим уточнение через блоки
+     критериев ниже.», но сами блоки никогда не показывались. Теперь
+     утвердительный ответ реально открывает карусель (как кнопка ниже). */
+  const pendingMore = S.chat.filter(m=>m.x==='more').pop();
+  if(pendingMore && /^(да|конечно|давай|хочу|ага|уточн|точнее)/i.test(t)) return answerMore(true, t);
+  /* Ни открытого вопроса анкеты, ни prompt «точнее?» — значит, пользователь
+     сам, по своей инициативе, написал что-то в свободном поле (например,
+     сразу про национальный режим, не дожидаясь, пока до него дойдёт
+     очередь блоков). Пытаемся понять, к какому критерию это относится. */
+  return freeCriterionFromChat(t);
+}
+/* ---------- свободный критерий из чата (не ответ на активный вопрос) ----------
+   Простая, не ИИ-эвристика для угадывания ПОЛЯ (по совпадению слов с
+   названием/вопросом поля — та же tokenize()/stemMatch(), что уже
+   используется для сопоставления запроса с процедурами), плюс уже готовый
+   и проверенный пайплайн LLM-распознавания ЗНАЧЕНИЯ (llmExtract) — для поля
+   он и так умеет честно отвечать «не понял» вместо угадывания. Намеренно
+   один критерий за сообщение — не пытаемся разобрать несколько критериев
+   в одной фразе, это usability-сложность, которую пока не просили решать. */
+function fieldSearchText(name){
+  const f = FIELD_DEFS[name];
+  /* fieldLabel(name) — то, что пользователь реально ВИДИТ и печатает
+     («Способ выбора победителя»), а не внутренний технический ключ поля
+     («Метод оценки») — раньше здесь стоял голый name, и переименованные
+     по CSV поля (12.08.2026) с этого момента вообще перестали угадываться
+     (или угадывались как другое поле, у которого случайно совпало слово
+     в СТАРОМ ключе — «Способ выбора победителя» находило «Способ оплаты»,
+     потому что оба ключа начинаются на «Способ», хотя показываемое
+     название «Метод оценки» с этим текстом вообще не пересекалось). */
+  const parts = [fieldLabel(name), name, f.q||''];
+  if(Array.isArray(f.values)) parts.push(...f.values);
+  return parts.join(' ');
+}
+/* Сырой счёт совпавших токенов (сколько слов из текста нашлось в имени/
+   вопросе/значениях поля) был обманчив на составных названиях: «Тип
+   торгов» и «Статус торгов» оба содержат слово «торгов» — при вводе «Тип
+   торгов» токенизируется только «торгов» (само «тип» короче 4 букв и
+   отсекается), и оба поля получали одинаковый счёт 1 — честная ничья, но
+   неправильная, ведь пользователь буквально написал название критерия.
+   Считаем ДОЛЮ покрытия — сколько токенов САМОГО ИМЕНИ поля нашлось в
+   тексте (matched / общее число токенов имени), а не сколько токенов
+   текста нашлось хоть где-то. Для «Тип торгов» (имя целиком — один
+   значимый токен «торгов») это будет 1/1=100%, для «Статус торгов»
+   (два токена «статус»+«торгов») — 1/2=50%: явный перевес у точного поля. */
+function fieldNameCoverage(name, toks){
+  const nameToks = tokenize(fieldLabel(name)); /* по видимому названию, не по техническому ключу — см. комментарий в fieldSearchText() */
+  if(!nameToks.length) return 0;
+  const matched = nameToks.filter(h=>toks.some(t=>stemMatch(h,t))).length;
+  return matched/nameToks.length;
+}
+function fieldMatchScore(name, toks){
+  const hay = tokenize(fieldSearchText(name));
+  let s = 0;
+  toks.forEach(t=>{ if(hay.some(h=>stemMatch(h,t))) s++; });
+  return s;
+}
+/* Угадываем только среди ещё НЕ отвеченных полей (S.usedItems) — если
+   критерий уже проставлен, менять его через свободный текст не пытаемся:
+   для этого уже есть модалка «Критерии подбора» и ✕ на чипе критерия.
+   Возвращаем null, если ничего не совпало или совпадение неоднозначно —
+   лучше честно не угадать, чем выбрать не то поле. Два прохода:
+   1) точное/подстрочное совпадение с названием поля — сильный сигнал,
+      пользователь буквально написал имя критерия («Тип торгов»);
+   2) иначе — по доле покрытия имени поля (см. fieldNameCoverage), а при
+      равенстве долей — по количеству реально совпавших слов (fieldMatchScore). */
+function guessFieldFromText(text){
+  const toks = tokenize(text);
+  const rawToks = rawWords(text); /* без ограничения по длине — см. labelWordsRaw */
+  if(!toks.length && !rawToks.length) return null;
+  const candidates = Object.keys(FIELD_DEFS).filter(n=>!S.usedItems.includes(n));
+  const norm = String(text||'').trim().toLowerCase();
+  /* Сверяем и с видимым названием (label), и со старым техническим ключом
+     (name) — второе на случай, если пользователь всё же напечатал старую
+     формулировку по памяти. Плюс — отдельно точное совпадение по ЦЕЛОМУ
+     короткому слову из названия («ИНН», «КСР» — 3 буквы, tokenize() их
+     режет по длине >3 символа и раньше эти поля вообще не находились по
+     свободному тексту, см. labelWordsRaw). */
+  const exact = candidates.filter(n=>norm.includes(fieldLabel(n).toLowerCase()) || norm.includes(n.toLowerCase())
+    || labelWordsRaw(n).some(w=>w.length>=3 && rawToks.includes(w)));
+  if(exact.length===1) return exact[0];
+  if(exact.length>1){
+    /* Название одного поля целиком входит в название другого (редко, но
+       возможно) — берём самое длинное/специфичное совпадение по видимому
+       названию. */
+    exact.sort((a,b)=>fieldLabel(b).length-fieldLabel(a).length);
+    return exact[0];
+  }
+  const scored = candidates
+    .map(n=>({n, cov:fieldNameCoverage(n, toks), s:fieldMatchScore(n, toks)}))
+    .filter(x=>x.s>0);
+  if(!scored.length) return null;
+  scored.sort((a,b)=>b.cov-a.cov || b.s-a.s);
+  if(scored.length>1 && scored[0].cov===scored[1].cov && scored[0].s===scored[1].s) return null;
+  return scored[0].n;
+}
+/* Реальный кейс (13.08.2026): «хочу уточнить график поставки» → поле
+   угадалось верно («Режим поставки»), но САМОГО значения в тексте физически
+   нет — только намерение обсудить критерий. LLM тем не менее вернула
+   «Партиями» — вопреки инструкции признаться, что не распознала (см.
+   validateLlmResult/recognized). Это ровно тот случай, который принцип
+   проекта запрещает: подставлять правдоподобное значение вместо честного
+   «не знаю». Отсекаем такие фразы ДЕТЕРМИНИРОВАННО, ДО обращения к LLM —
+   не полагаемся на дисциплину модели там, где можно проверить в JS.
+   Логика: убираем из токенов текста токены названия поля (label считается,
+   не техническое имя — то, что пользователь реально печатает) и известные
+   «намеренческие» глаголы/слова («хочу», «уточнить», «указать», «задать»,
+   «узнать», «важно» и т.п. по стеблю) — если после этого не осталось ни
+   одного токена, значит содержательной информации о ЗНАЧЕНИИ в тексте нет. */
+const META_INTENT_STEMS=['уточн','указа','задат','задай','узна','определ','выбер','выбра','интерес','важн','сообщ','напиш','ввод','введ','вписа','поставь','настро','измен','поменя','хотел','хочет'];
+function isMetaIntentOnly(text, name){
+  /* Числовой код/номер (ОКПД2, ИНН и т.п.) — это уже само по себе значение,
+     а не «намерение обсудить критерий». Но tokenize() режет группы цифр
+     короче 4 символов (задумано для слов, не для кодов «70.33.93.273» —
+     каждая группа между точками короче 4) — без этой проверки текст вида
+     «ОКПД2 70.33.93.273» после вычитания токенов названия поля оставался
+     совсем пустым, и реальный код ошибочно считался «намерением без
+     значения» (реальный баг 13.08.2026, тот же класс, что и матчинг по
+     ОКПД2 в REAL_FILTER_PRED — см. okpd2Match). Двух цифр подряд достаточно,
+     чтобы не спутать с «критерий номер 2» и т.п. */
+  if(/\d{2,}/.test(text)) return false;
+  const toks = tokenize(text);
+  if(!toks.length) return true;
+  const labelToks = new Set(tokenize(fieldLabel(name)).concat(tokenize(name)));
+  const remaining = toks.filter(t=>!labelToks.has(t) && !META_INTENT_STEMS.some(stem=>t.startsWith(stem)));
+  return remaining.length===0;
+}
+async function freeCriterionFromChat(text){
+  say('me', esc(text));
   render();
-  botThink(()=>{ say('bot','Учёл. Продолжим уточнение через блоки критериев ниже.'); render(); }, 700);
+  const name = guessFieldFromText(text);
+  if(!name){
+    /* Поле не угадано вообще — не гадаем и не отделываемся общей фразой,
+       а прямо показываем блоки критериев, чтобы пользователь уточнил сам
+       (то же самое, что делает кнопка «Уточнить ещё критерии»). */
+    botThink(()=>{
+      if(hasMoreCriteria()) manualRefine();
+      else say('bot','Кажется, вы уже указали все доступные критерии.');
+      render();
+    }, 700);
+    return;
+  }
+  const f = FIELD_DEFS[name];
+  /* Поле угадано, но в тексте нет самого значения — только намерение
+     («хочу уточнить график поставки») — см. isMetaIntentOnly(). Не идём
+     ни в addFilter() с сырым текстом (для text-полей), ни в LLM (для
+     enum/numeric, где модель на практике может всё равно угадать
+     правдоподобное значение вместо честного «не распознано») — сразу
+     задаём этот критерий как обычный вопрос анкеты, с готовыми чипами. */
+  if(isMetaIntentOnly(text, name)){
+    if(!S.usedItems.includes(name)) S.usedItems.push(name);
+    S.queue.splice(S.qi, 0, name);
+    S.curField = name;
+    askQuestion();
+    return;
+  }
+  const kind = llmFieldKind(f);
+  if(kind==='text'){
+    /* См. stripLabelWords: реальный кейс 13.08.2026 — «ОКПД2 70.33.93.273»
+       без очистки сохранял «2» из слова «ОКПД2» слева от кода, код переставал
+       совпадать с настоящим значением на карточке. */
+    const cleanVal = stripLabelWords(text, name) || text;
+    addFilter(name, f.ops[0], cleanVal, f.delta);
+    if(!S.usedItems.includes(name)) S.usedItems.push(name);
+    botThink(()=>{ say('bot', `Понял — добавил критерий «${esc(name)}»: ${esc(cleanVal)}`); render(); checkZero(); }, 700);
+    return;
+  }
+  /* Диапазон («от 3 до 15 млн») — детерминированно, до LLM, см.
+     parseNumberRange() (реальный случай 13.08.2026: «нмц от 3 до 15 млн»
+     теряло вторую границу и отображалось как «≈ примерно 3 000 000»). */
+  if(kind==='numeric' && f.ops.includes('Диапазон')){
+    const range = parseNumberRange(text);
+    if(range){
+      const value = `${range.min}-${range.max}`;
+      addFilter(name, 'Диапазон', value, f.delta);
+      if(!S.usedItems.includes(name)) S.usedItems.push(name);
+      say('bot', `Понял — добавил критерий «${esc(name)}»: <b>${numValLabel('Диапазон', value)}</b>`);
+      render();
+      checkZero();
+      return;
+    }
+  }
+  S.busy = true; render();
+  const result = await llmExtract(text, name, f);
+  S.busy = false;
+  if(result.ok && result.value!=null && result.value!==''){
+    const op = result.op || f.ops[0];
+    const shown = kind==='numeric'
+      ? numValLabel(op, result.value)
+      : esc(String(result.value));
+    addFilter(name, op, result.value, f.delta);
+    if(!S.usedItems.includes(name)) S.usedItems.push(name);
+    say('bot', `Понял — добавил критерий «${esc(name)}»: <b>${shown}</b>`);
+    render();
+    checkZero();
+    return;
+  }
+  /* Поле угадали, а конкретное значение из текста — нет: не молчим и не
+     сбрасываем попытку, а задаём этот же вопрос как обычный, с готовыми
+     чипами-вариантами (вставляем его следующим в очередь — дальше это
+     обрабатывается совершенно штатно через answerQ()/freeAnswerToQuestion(),
+     без какого-либо специального кода). Отдельно помечаем поле в
+     usedItems — обычно это делает confirmPick() в момент выбора чипа в
+     карусели, но здесь мы вставляем вопрос в очередь В ОБХОД confirmPick(),
+     и без этой строчки блок с этим критерием никогда не появлялся в
+     «Ходе подбора» (railSteps строит список именно из usedItems) — то
+     самое расхождение с выбором через кнопки в блоках, о котором сообщили. */
+  if(!S.usedItems.includes(name)) S.usedItems.push(name);
+  S.queue.splice(S.qi, 0, name);
+  S.curField = name;
+  askQuestion();
 }
 function moreBlock(){
   return `<ul class="blist">${['требования к участнику;','заказчиков;','критерии оценки;','национальный режим;','ТЗ и спецификацию;','наличие эквивалента;','ОКПД2 / КСР;','сроки поставки;','срок действия КП.']
-    .map(x=>`<li>${x}</li>`).join('')}</ul>`;
+    .map(x=>`<li>${x}</li>`).join('')}</ul>
+    ${backRow()}
+    <div class="chiprow">
+      <button class="chip" onclick="answerMore(true)">Да, уточнить</button>
+      <button class="chip muted" onclick="answerMore(false)">Нет, покажите что есть</button>
+    </div>`;
+}
+function answerMore(yes, rawText){
+  say('me', esc(rawText || (yes?'Да, уточните':'Нет, покажите что есть')));
+  const last=S.chat.filter(m=>m.x==='more').pop(); if(last) last.x=null;
+  render();
+  if(!yes){
+    /* Раньше клик по «Нет, покажите что есть» ничего не делал: чипы
+       прятались, а дальше — тишина. CTA-карточка технически уже была
+       выше в чате (см. finishGood()/ctaCard), но пользователю никак не
+       подсказывалось, что именно там и есть результат — выглядело так,
+       будто кнопка ни к чему не ведёт (реальный баг, 13.08.2026). Раз
+       пользователь прямо попросил «покажите что есть» — открываем грид
+       сразу, а не оставляем искать CTA глазами по прокрутке чата выше. */
+    botThink(()=>{ openGrid(); }, 500);
+    return;
+  }
+  botThink(()=>{
+    if(hasMoreCriteria()) manualRefine();
+    else say('bot','Больше критериев для уточнения не осталось — это уже максимально узкая подборка по имеющимся параметрам.');
+    render();
+  }, 700);
 }
 
 
 /* ---------- RAIL: Ход подбора ---------- */
-/* Пороги — доля от реального размера базы (BASE_TOTAL = PROCS.length), а не
-   абсолютные тысячи: раньше «Уточнение» включалось при total<=1000, что при
-   настоящем счётчике (максимум ~190) означало «всегда», то есть статус
-   был бы бессмысленным как только счётчик стал реальным. */
+/* Статус — по настоящему S.workingSet, никакой развилки по фазе (её
+   больше нет). Цвет/подпись/pct здесь чисто косметические — за РЕШЕНИЯ
+   (когда обнулять выборку, когда показывать CTA) отвечают
+   afterQueue()/checkZero(). */
 function statusInfo(){
-  if(S.total<=5) return {label:'Требует внимания', color:'var(--red)', pct:92};
-  if(S.total<=BASE_TOTAL*0.3) return {label:'Уточнение', color:'var(--amber)', pct:70};
+  if(S.workingSet.length<=5) return {label:'Требует внимания', color:'var(--red)', pct:92};
+  if(S.workingSet.length<=GOOD_ENOUGH) return {label:'Уточнение', color:'var(--amber)', pct:88};
   if(S.filters.length>0) return {label:'Начало подбора', color:'var(--rust)', pct:Math.min(30, 8+S.filters.length*6)};
   return {label:'Начало подбора', color:'var(--rust)', pct:8};
 }
@@ -2135,18 +3128,75 @@ function manualRefine(){
   render();
   scrollChat();
 }
+/* Раньше здесь были два жёстко зашитых шага («Параметры закупки»,
+   «Сроки и графики») с проверками, вообще не привязанными к тому, что
+   реально выбрал пользователь. Теперь список в «Ходе подбора» строится
+   динамически из того, какие блоки критериев пользователь фактически
+   выбрал для уточнения (через карусель), и в том порядке, в котором он
+   их выбирал — а не из фиксированного списка из двух пунктов.
+
+   Источник правды — S.usedItems: поле попадает туда в момент, когда
+   пользователь выбрал его чипом в карусели и нажал «Продолжить»
+   (см. confirmPick), то есть usedItems и есть «критерии, отмеченные для
+   уточнения». Блок появляется в списке при первом же попавшем туда поле
+   из этого блока — порядок блоков в списке следует порядку появления их
+   полей в usedItems, который, в свою очередь, следует порядку клика по
+   чипам (S.picked → confirmPick). Пример из требований («выбрал
+   Заказчика и Тип торгов» → блоки «Заказчик, Параметры закупки» именно
+   в этом порядке) воспроизводится этой логикой без каких-либо дополнительных
+   допущений.
+
+   Галочка у блока — когда ВСЕ поля этого блока, что пользователь выбрал
+   для уточнения, уже обработаны: либо у них реально есть значение в
+   S.filters, либо они осознанно пропущены («Не важно» / «Пропустить
+   вопрос» — S.skipped). Раньше «обработано» определялось косвенно —
+   через позицию поля в активной очереди вопросов (не встречается среди
+   ещё не заданных, S.queue от S.qi и дальше). Это ломалось в ровно
+   одном, но частом случае: если ответ на вопрос сразу обнулял выборку
+   (total<=5), answerQ()/freeAnswerToQuestion() останавливались ДО
+   advanceAfterAnswer() (чтобы не заставлять отвечать на остальные
+   вопросы поверх уже показанного «почти ничего не найдено»), а значит
+   S.qi не увеличивался — поле формально оставалось «текущим вопросом»
+   в S.queue, хотя фильтр по нему уже был реально применён. Из-за этого,
+   например, «Тип предмета: Работы» (когда это резко сужало выборку)
+   не получало галочку, хотя ответ засчитался. Теперь «обработано»
+   смотрит прямо на факт (S.filters/S.skipped), а не на то, продвинулся
+   ли указатель активной очереди — поэтому от порядка вопросов и от
+   прерывания на обнулении больше не зависит.
+
+   Если пользователь отменяет уже проставленный критерий (кнопка ✕ на
+   чипе критерия — removeAppliedFilter, «Назад» — goBack, «Убрать
+   критерий» на обнулившейся выборке — removeCriterion), поле удаляется
+   из usedItems (и, если было, из skipped), и при следующем рендере блок
+   либо снимает галочку (если в блоке остались другие выбранные поля),
+   либо пропадает из списка целиком (если это было единственное
+   выбранное поле блока) — это и есть «убрать из списка при отмене» из
+   требований. */
+function fieldResolved(name){
+  return S.filters.some(r=>r.f===name) || S.skipped.includes(name);
+}
+function railSteps(){
+  const order = []; const seen = new Set();
+  S.usedItems.forEach(it=>{
+    const b = BLOCKS.find(bl=>bl.items.includes(it));
+    if(b && !seen.has(b.id)){ seen.add(b.id); order.push(b); }
+  });
+  return order.map(b=>{
+    const touched = b.items.filter(it=>S.usedItems.includes(it));
+    const done = touched.length>0 && touched.every(fieldResolved);
+    return {id:b.id, name:b.n, done};
+  });
+}
 function viewRail(){
   const st = statusInfo();
-  const step1ok = S.usedItems.length>=3;
-  const step2ok = S.total<=1000;
+  const steps = railSteps();
   return `<div class="rp"><div class="pcard">
     <div class="t">Ход подбора</div>
     <div class="prow2"><span class="l">Статус</span><span class="v" style="color:${st.color}">${st.label}</span></div>
     <div class="pbar"><i style="width:${st.pct}%;background:${st.color}"></i></div>
-    <div class="plist" style="margin-top:12px">
-      <div class="pitem ${step1ok?'ok':''}"><span class="nm">${step1ok?'✓':'1'}</span>Параметры закупки</div>
-      <div class="pitem ${step2ok?'ok':''}"><span class="nm">${step2ok?'✓':'2'}</span>Сроки и графики</div>
-    </div>
+    ${steps.length?`<div class="plist" style="margin-top:12px">
+      ${steps.map((s,i)=>`<div class="pitem ${s.done?'ok':''}"><span class="nm">${s.done?'✓':(i+1)}</span>${esc(s.name)}</div>`).join('')}
+    </div>`:''}
     <div class="pcrit" onclick="openCritModal()">Критерии подбора: <b class="num">${S.filters.length}</b></div>
     ${hasMoreCriteria()?`<div class="pcrit" onclick="manualRefine()">⊕ Уточнить ещё критерии</div>`:''}
     <div class="pcta" onclick="openGrid()">${fmt(S.total)} процедур</div>
@@ -2186,7 +3236,7 @@ const SORT_FIELDS={
  backing:{label:'Размер обеспечения', get:p=>p.contractBackingSize},
  advance:{label:'Размер аванса', get:p=>p.prepaidExpense},
 };
-function openGrid(){ S.gridOpen=true; render(); }
+function openGrid(){ S.gridOpen=true; S.gridPage=0; render(); }
 function sortArr(arr){
   const def = SORT_FIELDS[S.sortField] || SORT_FIELDS.pub;
   const dir = S.sortDir==='asc' ? 1 : -1;
@@ -2207,7 +3257,12 @@ function sortedProcs(){ return sortArr(PROCS.slice()); }
 /* Используется в живом гриде выдачи — только то, что реально относится к текущему запросу
    и прошедшим фильтрам (см. rankMatches/REAL_FILTER_PRED), а не весь каталог. */
 function sortedResultProcs(){
-  const ids = S.workingSet && S.workingSet.length ? S.workingSet : PROCS.map(p=>p.id);
+  /* Раньше пустой S.workingSet тихо подменялся всем каталогом («чтобы не
+     показывать пустоту») — это ровно то нечестное поведение, от которого
+     теперь явно отказались (см. комментарий у computeStages()): честный
+     ноль остаётся нулём и здесь, viewGrid() показывает пустое состояние
+     явно, а не весь каталог вместо результата. */
+  const ids = S.workingSet || [];
   const arr = ids.map(id=>PROCS.find(p=>p.id===id)).filter(Boolean);
   return sortArr(arr);
 }
@@ -2248,8 +3303,33 @@ function gridKebab(){
     </div>`:''}
   </span>`;
 }
+/* Грид открывает РЕАЛЬНЫЕ процедуры (S.workingSet) постранично, а не
+   одним длинным списком. GRID_PAGE_SIZE — сколько карточек на странице. */
+const GRID_PAGE_SIZE = 20;
+/* Перелистывание вперёд за пределы того, что реально сгенерировано под
+   запрос (см. genQueryProcs) — не рисуем пустую страницу и не выдумываем
+   дополнительные строки, а показываем то же информационное сообщение
+   (toast), что и в остальных местах приложения, и остаёмся на последней
+   странице с настоящими карточками. Кнопка «Далее» намеренно не блокируется
+   заранее (в отличие от «Назад») — по просьбе заказчика (10.08.2026):
+   «если пользователь захочет открыть выборку до существенного сужения —
+   просто показываем грид с тем, что есть, а на next-е — информационное
+   сообщение», а не подряд задизейбленную кнопку. */
+function gridPage(delta){
+  const totalPagesReal = Math.max(1, Math.ceil(sortedResultProcs().length/GRID_PAGE_SIZE));
+  const next = (S.gridPage||0) + delta;
+  if(delta>0 && next>=totalPagesReal){
+    toast('Показаны все процедуры, доступные по вашим критериям сейчас — новые обновляются в реальном времени.');
+    return;
+  }
+  S.gridPage = Math.max(0, Math.min(totalPagesReal-1, next));
+  render();
+}
 function viewGrid(){
   const list = sortedResultProcs();
+  const totalPagesReal = Math.max(1, Math.ceil(list.length/GRID_PAGE_SIZE));
+  const page = Math.min(S.gridPage||0, totalPagesReal-1);
+  const pageList = list.slice(page*GRID_PAGE_SIZE, page*GRID_PAGE_SIZE+GRID_PAGE_SIZE);
   return `<div class="gcol">
     <div class="gh">
       <div class="gh1">
@@ -2263,8 +3343,13 @@ function viewGrid(){
       </div>
     </div>
     <div class="gsc">
-      ${list.map(p=>prow(p)).join('')}
+      ${list.length ? pageList.map(p=>prow(p)).join('') : `<div style="padding:30px 6px;color:var(--ink4);font-size:13px;text-align:center">По этим критериям процедур нет.</div>`}
     </div>
+    ${list.length?`<div class="gpager">
+      <button class="gpbtn" onclick="gridPage(-1)" ${page<=0?'disabled':''}>‹ Назад</button>
+      <span class="gpinfo">Стр. ${page+1}</span>
+      <button class="gpbtn" onclick="gridPage(1)">Далее ›</button>
+    </div>`:''}
     ${S.checked.length?bulkLive():''}
   </div>`;
 }
@@ -2406,10 +3491,96 @@ function bulkFolder(){
    процедуру — не при каждой перерисовке. */
 function openCard(id){ S.curProc=PROCS.find(p=>p.id===id); S.cardOpen=true; render(); }
 function closeCard(){ S.cardOpen=false; S.cardAnimId=null; render(); }
+/* Раньше карточка всегда показывала один и тот же фиксированный набор
+   полей (НМЦ/Оплата/Место поставки/Окончание приёма), независимо от того,
+   какие критерии реально выбрал пользователь в подборе. Заказчик прямо
+   попросил обратное: показывать РЕАЛЬНЫЕ значения именно тех критериев,
+   что были заданы (S.filters), — не typed-текст ответа пользователя
+   (это запрещено ещё с прошлой правки displayProc), а настоящее значение
+   поля у ЭТОЙ процедуры, то же самое, что использует REAL_FILTER_PRED. */
+const PROC_FIELD_DISPLAY = {
+ 'Тип торгов': p=>p.tt,
+ 'Способ проведения': p=>p.method,
+ 'Статус торгов': p=>p.status,
+ 'Тип предмета': p=>p.orderType,
+ 'МСП / СОНО': p=>p.msp?'Да':'Нет',
+ 'Категория ОКПД 2': p=>p.okpd2||null,
+ 'Классификатор строительных ресурсов (КСР)': p=>p.usesKSR?'Да':'Нет',
+ 'Способ оплаты': p=>p.paymentType,
+ 'Аванс: процент': p=>p.prepaidExpense!=null?p.prepaidExpense+'%':null,
+ 'Событие для оплаты': p=>p.paymentEvent,
+ 'Этапность платежей': p=>p.paymentStages,
+ 'Срок оплаты': p=>p.paymentTerm!=null?p.paymentTerm+' дн.':null,
+ 'Наличие обеспечения заявки': p=>p.backingForm!==null?'Да':'Нет',
+ 'Форма обеспечения заявки': p=>p.backingForm,
+ 'Размер обеспечения заявки': p=>p.applicationSecurityAmount!=null?p.applicationSecurityAmount+'%':null,
+ 'Требуется обеспечение исполнения': p=>p.backingRequired?'Да':'Нет',
+ 'Форма обеспечения исполнения': p=>p.contractBackingForm,
+ 'Размер обеспечения исполнения': p=>p.contractBackingSize!=null?p.contractBackingSize+'%':null,
+ /* Раньше — `p.bankRestrictions?'Да':'Нет'`: значение поля хранится как
+    строка 'да'/'нет' (не boolean), а непустая строка 'нет' в JS тоже
+    truthy — карточка показывала «Да» ВСЕГДА, когда поле вообще заполнено,
+    независимо от реального 'да'/'нет' (реальный баг 13.08.2026, найден
+    self-consistency-тестом: предикат честно сравнивал показанное «Да» с
+    настоящим 'нет' и не совпадал). Та же ошибка была у «Национальный
+    режим» и «Есть перечень обязательных документов» ниже. */
+ 'Ограничения по банку': p=>p.bankRestrictions==='да'?'Да':'Нет',
+ 'Срок действия БГ': p=>p.bgValidityTerm!=null?p.bgValidityTerm+' дн.':null,
+ 'Опыт: требуется для допуска': p=>p.experienceRequired?'Да':'Нет',
+ 'Опыт: чем подтверждать (допуск)': p=>p.experienceFrom,
+ 'Опыт: критерий оценки': p=>p.isExperience?'Да':'Нет',
+ 'Опыт: чем подтверждать (оценка)': p=>p.howExperience,
+ 'Место поставки': p=>p.place,
+ 'Регион заказчика': p=>regionOf(p.place),
+ 'Режим поставки': p=>p.deliveryMode,
+ 'Эквивалент': p=>p.equivalentVal,
+ 'Национальный режим': p=>p.nationalRegime==='да'?'Да':'Нет',
+ 'Срок КП': p=>p.priceOfferTerm!=null?p.priceOfferTerm+' дн.':null,
+ 'Дата публикации торгов': p=>p.pubDays!=null?`${p.pubDays} дн. назад`:null,
+ 'Дата начала приёма заявок': p=>p.appStartDays!=null?`${p.appStartDays} дн. назад`:null,
+ 'Окончание приема заявок': p=>p.end,
+ 'Метод оценки': p=>p.assessmentMethod,
+ 'НМЦ лота': p=>p.nmck!==null?money(p.nmck):null,
+ 'Есть перечень обязательных документов': p=>p.docsList==='да'?'Да':'Нет',
+ 'Заказчик': p=>p.cust,
+ 'ИНН заказчика': p=>p.inn,
+};
+function critValueOnProc(name, p){
+  const fn = PROC_FIELD_DISPLAY[name];
+  if(!fn) return null;
+  const v = fn(p);
+  return (v===null || v===undefined || v==='') ? null : v;
+}
 function viewCard(){
   const p=displayProc(S.curProc);
   const fresh = S.cardAnimId !== p.id;
   S.cardAnimId = p.id;
+  /* Базовый набор — все «формализованные» критерии (CARD_BASE_FIELDS, по
+     CSV «Критерии из документации»): карточка показывает их ВСЕГДА,
+     независимо от того, что выбрал пользователь в подборе (п.4 просьбы
+     заказчика). Плюс — критерии, которые пользователь реально выбрал
+     (S.filters), если их ещё нет среди базовых, с отдельной пометкой.
+     Значения — настоящие, с ЭТОЙ процедуры (critValueOnProc), не то, что
+     человек напечатал — ввод пользователя только выбирает ИЗ неизменной
+     базы, а не подставляется в карточку как есть. */
+  const baseRows = CARD_BASE_FIELDS
+    .map(name=>({name, val:critValueOnProc(name, p)}))
+    .filter(r=>r.val!==null);
+  const baseNames = new Set(baseRows.map(r=>r.name));
+  const extraRows = S.filters
+    .map(r=>({name:r.f, val:critValueOnProc(r.f, p)}))
+    .filter(r=>r.val!==null && !baseNames.has(r.name));
+  const rows = baseRows.concat(extraRows)
+    .map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(String(r.val))}</td></tr>`).join('');
+  /* Превью в блоке «Критерии из документации» — только НЕформализованные
+     критерии из числа применённых фильтров (формализованные и так уже
+     показаны выше, в основной таблице карточки — дублировать их здесь
+     незачем). Раньше тут висела одна и та же захардкоженная строка
+     «Место поставки: Ярославль, Москва» независимо от процедуры и от
+     того, что реально искали — теперь честный список. */
+  const filterRows = S.filters
+    .map(r=>({name:r.f, val:critValueOnProc(r.f, p)}))
+    .filter(r=>r.val!==null && FIELD_SOURCE_TYPE[r.name]!=='Формализованные');
   return `<div class="ccol" style="${fresh?'':'animation:none'}">
     <div class="ch1">
       <span class="regn">✅ ${p.id}</span><span class="tagok">${p.st}</span><span class="lot">${p.lot}</span>
@@ -2418,17 +3589,21 @@ function viewCard(){
     <div class="csc">
       <div class="ctit">${esc(p.n)}</div>
       <a class="ccust" onclick="toast('Открывается новой вкладкой')">${esc(p.cust)}</a>
-      <table class="ktab">
-        <tr><td>НМЦ лота</td><td class="num">${p.nmckDisplay===null?'не указано':esc(p.nmckDisplay)}</td></tr>
-        <tr><td>Оплата</td><td>${esc(p.pay)}</td></tr>
-        <tr><td>Место поставки</td><td>${esc(p.place.split(',')[0])}</td></tr>
-        <tr><td>Окончание приёма заявок</td><td>${esc(p.end)}</td></tr>
-      </table>
+      <div style="font-size:11px;color:var(--ink4);margin-bottom:4px">${extraRows.length?'Формализованные критерии + то, что вы указали в подборе':'Формализованные критерии'}</div>
+      <table class="ktab">${rows}</table>
       <a class="morea" onclick="toast('Открывается новой вкладкой в торговой секции')">Подробнее ↗</a>
       <div class="docbox">
         <div class="dt">Критерии из документации <span class="spark">✦</span></div>
-        <ul><li>Место поставки: ${esc(p.place)}. Источник: <a onclick="toast('Открывается документ')">Техническое задание.docx</a></li></ul>
-        <span class="allcrit" onclick="openM_allcrit()">Все критерии из документации →</span>
+        ${filterRows.length?`<ul>${filterRows.map(r=>`<li>${esc(r.name)}: ${esc(String(r.val))}. Источник: ${docSourceCell(r.name)}</li>`).join('')}</ul>`
+          /* Раньше здесь всегда было «Критериев подбора пока не выбрано» —
+             неверно, если критерии ВЫБРАНЫ, но все они формализованные (уже
+             показаны в основной таблице выше): сообщение звучало так, будто
+             пользователь вообще ничего не выбирал (найдено сквозным
+             тестированием карточки, 13.08.2026). */
+          :(S.filters.length
+            ?`<div style="font-size:12px;color:var(--ink4);margin-bottom:2px">Все выбранные критерии — формализованные, показаны в таблице выше</div>`
+            :`<div style="font-size:12px;color:var(--ink4);margin-bottom:2px">Критериев подбора пока не выбрано</div>`)}
+        <span class="allcrit" onclick="openM_allcrit()">Все критерии →</span>
       </div>
     </div>
     <div class="cfoot">
@@ -2437,25 +3612,45 @@ function viewCard(){
     </div>
   </div>`;
 }
+/* Раньше это была фиксированная выдуманная таблица (ALLCRIT) — одни и те
+   же 10 строк с одними и теми же значениями независимо от того, какую
+   процедуру открыли. Теперь строим её из настоящих данных ЭТОЙ процедуры
+   (PROC_FIELD_DISPLAY/critValueOnProc — то же, что использует viewCard()
+   и REAL_FILTER_PRED), «Источник» — честная классификация из CSV
+   (FIELD_SOURCE_TYPE), «В подборе» — реально ли поле есть среди
+   применённых пользователем фильтров (S.filters), а не произвольные
+   true/false как раньше. */
+/* ~30 критериев с реальным значением у типичной процедуры — одной колонкой
+   на обычной высоте экрана это не помещается. Делим на две колонки
+   (компактные строки), модалка шире и выше — так на обычном экране почти
+   всегда видно всё сразу; прокрутка внутри содержимого оставлена как
+   защита на случай маленького окна/особо длинного списка (по просьбе
+   заказчика, 12.08.2026) — не обрезаем критерии, а даём докрутить. */
 function openM_allcrit(){
-  const isDoc = s => /\.docx?$|Документация/i.test(s);
-  const rows = ALLCRIT.map(c=>`<tr><td style="padding:8px 0;border-bottom:1px solid var(--line2)">${c.n}</td>
-    <td style="padding:8px 0;border-bottom:1px solid var(--line2);font-weight:600">${c.v}</td>
-    <td style="padding:8px 0;border-bottom:1px solid var(--line2);font-size:12px">${isDoc(c.s)
-      ?`<a style="color:var(--blue);cursor:pointer" onclick="toast('Открывается документ')">${c.s}</a>`
-      :`<span style="color:var(--ink4)">${c.s}</span>`}</td>
-    <td style="padding:8px 0;border-bottom:1px solid var(--line2)">${c.u?'<span style="color:var(--green);font-weight:600;font-size:12px">участвовал</span>':'<span style="color:var(--ink4);font-size:12px">не участвовал</span>'}</td></tr>`).join('');
-  const html = `<div style="position:fixed;inset:0;background:rgba(27,30,43,.42);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px" onclick="if(event.target===this)this.remove()">
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:640px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(27,30,43,.3)">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center">
-        <span style="font-size:15px;font-weight:700;flex:1">Все критерии из документации</span>
+  const p = displayProc(S.curProc);
+  const usedNames = new Set(S.filters.map(r=>r.f));
+  const rowData = Object.keys(PROC_FIELD_DISPLAY)
+    .map(name=>({name, val:critValueOnProc(name, p), used:usedNames.has(name)}))
+    .filter(r=>r.val!==null);
+  const mid = Math.ceil(rowData.length/2);
+  const rowsHtml = arr=>arr.map(c=>`<tr style="${c.used?'background:var(--green-bg)':''}">
+    <td style="padding:5px 8px;border-bottom:1px solid var(--line2)">${esc(c.name)}</td>
+    <td style="padding:5px 8px;border-bottom:1px solid var(--line2);font-weight:600">${esc(String(c.val))}</td>
+    <td style="padding:5px 8px;border-bottom:1px solid var(--line2);font-size:11px">${docSourceCell(c.name)}</td>
+    <td style="padding:5px 8px;border-bottom:1px solid var(--line2)">${c.used?'<span style="color:var(--green);font-weight:600;font-size:11px">✓</span>':'<span style="color:var(--ink4);font-size:11px">—</span>'}</td></tr>`).join('');
+  const tableHtml = arr=>`<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr style="font-size:10px;text-transform:uppercase;color:var(--ink4);text-align:left">
+      <th style="padding:0 8px 6px">Критерий</th><th style="padding:0 8px 6px">Значение</th><th style="padding:0 8px 6px">Источник</th><th style="padding:0 8px 6px">В подборе</th></tr></thead>
+    <tbody>${rowsHtml(arr)}</tbody>
+  </table>`;
+  const html = `<div style="position:fixed;inset:0;background:rgba(27,30,43,.42);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)this.remove()">
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:1040px;max-height:94vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(27,30,43,.3)">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;flex:none">
+        <span style="font-size:15px;font-weight:700;flex:1">Все критерии</span>
         <button onclick="this.closest('div[style*=fixed]').remove()" style="font-size:18px;color:var(--ink3)">×</button></div>
-      <div style="padding:16px 20px;overflow-y:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead><tr style="font-size:10.5px;text-transform:uppercase;color:var(--ink4);text-align:left">
-            <th style="padding-bottom:8px">Критерий</th><th>Значение</th><th>Источник</th><th>В подборе</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+      <div style="padding:14px 20px;display:flex;gap:20px;overflow-y:auto">
+        <div style="flex:1;min-width:0">${tableHtml(rowData.slice(0,mid))}</div>
+        <div style="flex:1;min-width:0;border-left:1px solid var(--line);padding-left:20px">${tableHtml(rowData.slice(mid))}</div>
       </div>
     </div></div>`;
   const d=document.createElement('div'); d.innerHTML=html; document.body.appendChild(d.firstElementChild);
@@ -2515,9 +3710,14 @@ function folderBaseProcs(){
   return shown.map(i=>PROCS.find(p=>p.id===i.id)).filter(Boolean);
 }
 function applyFolderFilters(arr){
+  /* Тот же «предохранитель», что был везде в основном поиске (тихо
+     оставлял предыдущий непустой шаг при настоящем нуле) — убран по тому
+     же принципу: честный ноль внутри подборки тоже должен остаться нулём,
+     а не молча откатываться на шаг назад (найдено сквозным аудитом,
+     13.08.2026). */
   S.folderFilters.forEach(r=>{
     const pred = REAL_FILTER_PRED[r.f];
-    if(pred){ const narrowed = arr.filter(p=>pred(p, r.v, r.o)); if(narrowed.length) arr = narrowed; }
+    if(pred){ arr = arr.filter(p=>pred(p, r.v, r.o)); }
   });
   return arr;
 }
@@ -2536,7 +3736,7 @@ function folderCritRunning(){
   let prev = arr.length;
   return S.folderFilters.map(r=>{
     const pred = REAL_FILTER_PRED[r.f];
-    if(pred){ const narrowed = arr.filter(p=>pred(p, r.v, r.o)); if(narrowed.length) arr = narrowed; }
+    if(pred){ arr = arr.filter(p=>pred(p, r.v, r.o)); }
     const total = arr.length;
     const delta = Math.max(0, prev-total);
     prev = total;
