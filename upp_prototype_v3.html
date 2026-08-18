@@ -408,10 +408,41 @@ body.reqs .req{display:inline-block}
 .ddopt{padding:7px 9px;font-size:12.5px;color:var(--ink2);border-radius:6px;white-space:nowrap}
 .ddopt:hover{background:var(--blue-l);color:var(--blue)}
 .ddopt.on{color:var(--blue);font-weight:600}
+/* Выбор ПОЛЯ критерия — тот же .ddmenu, но со своим поиском сверху и
+   группами по блокам (просьба заказчика, 18.08.2026): раньше это был
+   сплошной нечитаемый список из ~35 названий. Список групп прокручивается
+   отдельно от поля поиска, которое остаётся закреплено сверху. */
+.fddmenu{padding:6px;min-width:250px;max-height:none;overflow:visible;display:flex;flex-direction:column;gap:6px}
+.fddsearch{border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:12.5px;color:var(--ink);width:100%}
+.fddsearch:focus{outline:2px solid var(--blue);outline-offset:1px}
+.fddlist{max-height:260px;overflow-y:auto;padding-right:2px}
+.fddgrp{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--ink4);
+  padding:7px 9px 3px;margin-top:4px}
+.fddgrp:first-child{margin-top:0}
+.fddopt{white-space:normal}
 
 /* ===== criteria modal ===== */
 .modalbg{position:fixed;inset:0;background:rgba(27,30,43,.42);z-index:200;display:flex;
   align-items:center;justify-content:center;padding:24px}
+/* ---------- спотлайт-тур по интерфейсу ----------
+   Затемнение — НЕ один полноэкранный div с "дыркой" через clip-path (это
+   ломается, если подсвечиваемый элемент лежит внутри overflow:hidden/auto
+   родителя — .carw, например, живёт внутри прокручиваемой .chatsc). Вместо
+   этого — 4 отдельных тёмных прямоугольника вокруг getBoundingClientRect()
+   цели: работает всегда, независимо от вложенности и overflow. */
+.tourlay{position:fixed;inset:0;z-index:1400;pointer-events:none}
+.tourdim{position:fixed;background:rgba(15,17,26,.55);pointer-events:auto;transition:all .2s ease}
+.tourring{position:fixed;border:2px solid var(--blue);border-radius:10px;
+  box-shadow:0 0 0 4px rgba(47,92,224,.22);pointer-events:none;transition:all .2s ease}
+.tourbub{position:fixed;background:#fff;border-radius:12px;padding:14px 16px;
+  box-shadow:0 12px 32px rgba(27,30,43,.3);pointer-events:auto;z-index:1401}
+.tourhead{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font-weight:700;font-size:13.5px;margin-bottom:6px}
+.tourdots{display:flex;gap:4px;flex:none}
+.tourdots i{width:5px;height:5px;border-radius:50%;background:var(--line);display:block}
+.tourdots i.on{background:var(--blue);width:14px;border-radius:3px}
+.tourtext{font-size:12.5px;color:var(--ink2);line-height:1.5;margin-bottom:12px}
+.tourfoot{display:flex;justify-content:flex-end;gap:8px}
 .modalcard{background:#fff;border-radius:16px;width:100%;max-width:740px;max-height:86vh;
   overflow-y:auto;box-shadow:0 20px 60px rgba(27,30,43,.3);padding:20px 22px}
 .mhead{display:flex;align-items:center;margin-bottom:14px}
@@ -526,6 +557,7 @@ body.reqs .req{display:inline-block}
 <div id="landingLayer" style="display:none"></div>
 <div id="modalLayer"></div>
 <div id="saveModalLayer"></div>
+<div id="tourLayer"></div>
 
 <script>
 /* =====================================================================
@@ -542,6 +574,22 @@ function fakeDate(daysFromNow){
   const base=new Date(2026,7,10);
   const d=new Date(base.getTime()+daysFromNow*86400000);
   return String(d.getDate()).padStart(2,'0')+' '+MONTHS_RU[d.getMonth()]+' '+d.getFullYear()+' в 09:00 мск';
+}
+/* По интервью с пользователями (18.08.2026) — в реальности они часто ищут
+   закупки на миллионы, а не только на сотни тысяч, как было раньше (базовый
+   диапазон на запрос — 60 000–950 000, самая дорогая фиксированная категория
+   — максимум 3.1 млн). Обычное равномерное распределение внутри одного
+   диапазона это никогда не даст — сверху всегда будет то же самое макс.
+   значение диапазона. Добавляем ~28% шанс попасть в отдельный «крупный»
+   ценовой сегмент (от полутора базовых максимумов и минимум 2 млн — до
+   45 млн), независимо от базового диапазона категории/запроса. */
+function genPrice(rnd, baseMin, baseMax){
+  if(rnd()<0.28){
+    const bigMin = Math.max(baseMax*1.5, 2000000);
+    const bigMax = Math.max(bigMin*3, 45000000);
+    return Math.round((bigMin+rnd()*(bigMax-bigMin))/100)*100+0.99;
+  }
+  return Math.round((baseMin+rnd()*(baseMax-baseMin))/100)*100+0.99;
 }
 function mulberry32(seed){
   return function(){
@@ -720,6 +768,20 @@ const TITLE_SUFFIXES=['',' — партия 1',' — партия 2',' на 2026
  ' в рамках модернизации',' для сезонных нужд',' по заявке филиала',' в целях импортозамещения',
  ' для капитального ремонта']; /* 25 — при реальной генерации по 10 480 процедур на запрос (см. QUERY_BATCH_SIZE) чем больше суффиксов, тем реже буквально повторяется один и тот же текст названия */
 const PROCS=[];
+/* Поиск процедуры по id раньше везде делался как PROCS.find(p=>p.id===id) —
+   линейный перебор ВСЕГО массива. PROCS — не константного размера: каждый
+   НОВЫЙ запрос добавляет в него ещё QUERY_BATCH_SIZE=10480 процедур (см.
+   genQueryProcs) и никогда не уменьшается за сессию. Поэтому фильтрация
+   рабочей выборки (которая сама вызывает такой поиск для КАЖДОГО id в
+   выборке, для КАЖДОГО применённого критерия) на 2-3-м поисковом запросе в
+   рамках одной сессии превращалась в O(размер_выборки × размер_PROCS) —
+   миллионы, а затем и сотни миллионов операций на каждое действие с
+   фильтром (реальный баг, найден при сквозном фазз-тестировании счётчика
+   процедур, 18.08.2026 — не тестовый артефакт, а настоящая деградация
+   производительности по мере накопления истории поиска в сессии). Карта
+   id→процедура даёт O(1) поиск независимо от того, сколько запросов уже
+   было сделано. */
+const PROCS_BY_ID = new Map();
 const VARIANTS_PER_ITEM=6; /* 43 названия × 6 = ~258 процедур, без повторов текста внутри одного названия */
 let _cityCursor=0, _custCursor=0;
 CATS.forEach(cat=>{
@@ -739,7 +801,7 @@ CATS.forEach(cat=>{
       const tt=TT_TYPES[Math.floor(_rnd()*TT_TYPES.length)]; /* раньше формула (0.5 / 1+floor(*3)) была рассчитана на старые 4 значения — при расширении TT_TYPES до 5 индекс 4 («Портал Поставщиков») был физически недостижим; равномерный выбор по длине массива работает для любого количества значений */
       const urgent=_rnd()<0.06;
       const noPrice=_rnd()<0.1;
-      const nmck=noPrice?null:Math.round((cat.pMin+_rnd()*(cat.pMax-cat.pMin))/100)*100+0.99;
+      const nmck=noPrice?null:genPrice(_rnd, cat.pMin, cat.pMax);
       const days=urgent?0.5:Math.round(1+_rnd()*40);
       const pubDays=Math.round(_rnd()*45); /* сколько дней назад опубликована — для сортировки «Дата публикации» */
       /* Приём заявок открывается в день публикации или чуть позже — реальное
@@ -785,7 +847,7 @@ CATS.forEach(cat=>{
         : paymentType==='отсрочка' ? `отсрочка платежа, ${paymentTerm} дн. ${evTxt}`
         : `постоплата, ${paymentTerm} дн. ${evTxt}`;
 
-      PROCS.push({
+      const proc0={
         id:genId(), st:'Прием заявок', lot:'Лот 1 из '+(1+Math.floor(_rnd()*2)),
         n:title, cust, tt, place:city, nmck, pay,
         end:fakeDate(days), days, urgent, tags:cat.tags, pubDays, appStartDays,
@@ -796,7 +858,8 @@ CATS.forEach(cat=>{
         equivalentVal, experienceRequired, experienceFrom,
         nationalRegime, assessmentMethod, isExperience, howExperience,
         deliveryMode, docsList, priceOfferTerm, status, method, msp, usesKSR, okpd2,
-      });
+      };
+      PROCS.push(proc0); PROCS_BY_ID.set(proc0.id, proc0);
     }
   });
 });
@@ -808,11 +871,20 @@ CATS.forEach(cat=>{
    ответах на вопросы диалога (см. REAL_FILTER_PRED и addFilter). */
 const STOPWORDS=new Set(['для','или','под','что','как','это','также','либо','нужно','надо','хочу','нам','вам',
  'поставка','поставки','поставку','услуга','услуги','услугу','оказание','выполнение','работы','работ','нужны','нужен']);
+/* «ё» в свободном тексте пишут не всегда (а часто и не пишут вовсе — обычная
+   практика для русского языка), а в захардкоженных названиях/значениях
+   полей она то есть, то нет («Приемка» без ё в значении, «приёмки» с ё —
+   как типично печатает человек). Без нормализации это два РАЗНЫХ слова для
+   stemMatch (сравнение по первым символам, ё≠е как разные символы) — реальный
+   баг, 18.08.2026: «оплата после приёмки товара» не находило поле «Событие
+   для оплаты» (значение «Приемка») именно из-за этого. Нормализуем ё→е
+   везде, где текст готовится к сравнению (tokenize/rawWords/labelWordsRaw). */
+function normRu(s){ return String(s||'').toLowerCase().replace(/ё/g,'е'); }
 function tokenize(s){
   /* от 4 символов и длиннее: короткие обрубки (3 буквы и меньше) слишком легко
      случайно совпадают внутри произвольного длинного слова (например «бла»
      внутри «областная») — это была реальная причина мусорных совпадений. */
-  return String(s||'').toLowerCase().replace(/[^a-zа-яё0-9\s]/gi,' ').split(/\s+/)
+  return normRu(s).replace(/[^a-zа-я0-9\s]/gi,' ').split(/\s+/)
     .filter(w=>w.length>3 && !STOPWORDS.has(w));
 }
 function stemMatch(a,b){
@@ -910,7 +982,7 @@ function genQueryProcs(rawQuery){
   const rnd=mulberry32(hashStr(key) || 1);
   const kind=guessKindForQuery(query);
   const tags=tokenize(query);
-  const pMin=60000, pMax=950000; /* общий правдоподобный диапазон — под произвольный запрос конкретная категория цен заранее не известна */
+  const pMin=80000, pMax=1400000; /* «обычный» диапазон — под произвольный запрос конкретная категория цен заранее не известна; крупный сегмент (до 45 млн) добавляет genPrice() */
   const ids=[];
   /* Один код ОКПД2 на весь запрос (не на каждую процедуру отдельно) — см.
      комментарий у первой генерации (CATS). */
@@ -925,7 +997,7 @@ function genQueryProcs(rawQuery){
     const tt=TT_TYPES[Math.floor(rnd()*TT_TYPES.length)];
     const urgent=rnd()<0.06;
     const noPrice=rnd()<0.1;
-    const nmck=noPrice?null:Math.round((pMin+rnd()*(pMax-pMin))/100)*100+0.99;
+    const nmck=noPrice?null:genPrice(rnd, pMin, pMax);
     const days=urgent?0.5:Math.round(1+rnd()*40);
     const pubDays=Math.round(rnd()*45);
     const appStartDays=Math.max(0, pubDays-Math.floor(rnd()*4)); /* см. комментарий у первой генерации (CATS) */
@@ -973,7 +1045,7 @@ function genQueryProcs(rawQuery){
       nationalRegime, assessmentMethod, isExperience, howExperience,
       deliveryMode, docsList, priceOfferTerm, status, method, msp, usesKSR, okpd2,
     };
-    PROCS.push(proc);
+    PROCS.push(proc); PROCS_BY_ID.set(proc.id, proc);
     ids.push(proc.id);
   }
   QUERY_PROC_CACHE.set(key, ids);
@@ -1030,7 +1102,15 @@ function numMatches(actual, val, op){
   const moreHint = op==='Больше' || v.includes('от ') || v.includes('бол') || v.includes('не менее');
   if(lessHint) return actual<=num;
   if(moreHint) return actual>=num;
-  return Math.abs(actual-num) < Math.max(num*0.4, 5); /* «Равен» / «Диапазон» без второй границы — «около» */
+  /* «Равен» (и «Диапазон» без второй границы, т.е. по факту одно число) —
+     раньше здесь было ±40% «около», хотя пользователь просил ТОЧНОЕ
+     значение и видел в чате подтверждение «равен» — то есть сам текст
+     обещал точность, а предикат её не соблюдал (просьба заказчика,
+     18.08.2026: «должно быть чётко всё, как пользователь просит»).
+     Math.floor(actual) — деньги (p.nmck) всегда хранятся с копейками
+     (…,99), parseAmount() их отбрасывает; сравниваем в тех же целых
+     рублях, что и введённое число, а не приблизительно. */
+  return Math.floor(actual)===num;
 }
 function priceMatches(nmck, val, op){ return numMatches(nmck, val, op); }
 /* Общий предикат для полей да/нет: actual может быть boolean (true/false),
@@ -1462,7 +1542,7 @@ const FIELD_DEFS = {
  /* --- цена и документы --- */
  'НМЦ лота': {ops:['Равен','Диапазон','Больше','Меньше'], values:null, delta:800,
   q:'Какая стоимость закупки?', d:'',
-  chips:['До 500 000 ₽','До 1 000 000 ₽'],
+  chips:['До 1 000 000 ₽','От 5 000 000 ₽'],
   label:'Стоимость закупки', tip:'Позволяет ограничить поиск по стоимости закупки.'},
  'Есть перечень обязательных документов': {ops:['Равен'], values:['Да','Нет'], delta:200,
   q:'Какие документы необходимо предоставить?', d:'',
@@ -1833,6 +1913,7 @@ function reset(){
     saveModalOpen:false, saveIds:[], saveNewName:'', saveSelectedFolder:null,
     saveTplOpen:false, saveTplName:'',
     folderCritModalOpen:false, folderFilters:[], folderOpenDD:null,
+    tourStep:null,
   };
 }
 reset();
@@ -1865,11 +1946,13 @@ function render(){
     : (S.folderCritModalOpen ? renderFolderCritModal() : ''));
   document.getElementById('avatarMenu').innerHTML = S.openDD==='avatar' ? avatarMenu() : '';
   document.getElementById('saveModalLayer').innerHTML = S.saveModalOpen ? renderSaveModal() : '';
+  document.getElementById('tourLayer').innerHTML = renderTourLayer();
 }
 function goOnboard(){ S.screen='onboard'; S.navScreen=null; S.openDD=null; render(); }
 function avatarMenu(){
   return `<div class="ddmenu" style="right:0;left:auto;top:calc(100% + 8px);min-width:190px">
     <div class="ddopt" onclick="event.stopPropagation();S.openDD=null;goOnboard()">📘 Онбординг</div>
+    ${S.screen==='chat'?`<div class="ddopt" onclick="event.stopPropagation();S.openDD=null;startTour()">✦ Тур по интерфейсу</div>`:''}
     <div class="ddopt" onclick="event.stopPropagation();S.openDD=null;toast('Профиль');render()">👤 Профиль</div>
     <div class="ddopt" onclick="event.stopPropagation();S.openDD=null;toast('Выход из аккаунта');render()">↪ Выйти</div>
   </div>`;
@@ -1903,6 +1986,60 @@ function scopeArr(scope){
   if(scope==='tpl') return S.curTplRules;
   if(scope==='folder') return S.folderFilters;
   return S.filters;
+}
+/* Выбор ПОЛЯ критерия — раньше был обычным ddField() со сплошным списком
+   из ~35 названий без группировки, которые невозможно было быстро найти
+   (просьба заказчика, 18.08.2026). Отдельный дропдаун: те же группы, что
+   и в «Ход подбора» (BLOCKS), плюс поиск по вводу текста (фильтрует список
+   на лету, без render() — чтобы не сбрасывать фокус ввода при печати, тот
+   же приём, что и у setFilterVal). Поля, уже занятые ДРУГИМИ строками того
+   же набора критериев, скрыты — незачем предлагать выбрать критерий
+   дважды. */
+function fieldGroupsFor(scope, currentValue){
+  const used = new Set(scopeArr(scope).map(r=>r.f).filter(f=>f && f!==currentValue));
+  return BLOCKS.map(b=>({n:b.n, items:b.items.filter(it=>FIELD_DEFS[it] && !used.has(it))}))
+    .filter(g=>g.items.length);
+}
+function fieldOptRow(scope, idx, it, value){
+  return `<div class="ddopt fddopt ${it===value?'on':''}" data-s="${esc(normRu(fieldLabel(it)))}"
+    onclick="selectDD('${scope}','f',${idx},'${esc(it).replace(/'/g,"\\'")}')">${esc(fieldLabel(it))}</div>`;
+}
+function fieldGroupRow(scope, idx, g, value){
+  return `<div class="fddgrp">${esc(g.n)}</div>${g.items.map(it=>fieldOptRow(scope,idx,it,value)).join('')}`;
+}
+function fieldDD(id, scope, idx, value){
+  const open = S.openDD===id;
+  const groups = fieldGroupsFor(scope, value);
+  const optsHtml = groups.map(g=>fieldGroupRow(scope,idx,g,value)).join('');
+  return `<span class="esel fsel" data-dd="${id}">
+    <button type="button" class="ddtrig" onclick="event.stopPropagation();toggleDD('${id}')">
+      <span>${value?esc(fieldLabel(value)):'<span style="color:var(--ink4)">Выберите критерий</span>'}</span><span style="color:var(--ink4)">▾</span></button>
+    ${open?`<div class="ddmenu fddmenu" onclick="event.stopPropagation()">
+      <input class="fddsearch" placeholder="Найти критерий…" oninput="filterFieldOpts(this)">
+      <div class="fddlist">${optsHtml}</div>
+    </div>`:''}
+  </span>`;
+}
+/* Прямая правка DOM без render() — печать в поле поиска не должна сбрасывать
+   фокус (тот же приём, что и у setFilterVal ниже). Два прохода по списку:
+   сначала скрываем/показываем сами пункты по совпадению подстроки, затем
+   скрываем заголовок группы целиком, если в ней не осталось видимых пунктов. */
+function filterFieldOpts(input){
+  const q = normRu(input.value).trim();
+  const list = input.nextElementSibling;
+  if(!list) return;
+  let curGroup=null, curGroupVisible=false;
+  Array.from(list.children).forEach(el=>{
+    if(el.classList.contains('fddgrp')){
+      if(curGroup) curGroup.style.display = curGroupVisible ? '' : 'none';
+      curGroup=el; curGroupVisible=false;
+    } else {
+      const match = !q || el.getAttribute('data-s').includes(q);
+      el.style.display = match ? '' : 'none';
+      if(match) curGroupVisible=true;
+    }
+  });
+  if(curGroup) curGroup.style.display = curGroupVisible ? '' : 'none';
 }
 function valueField(id, scope, idx, r){
   const def = FIELD_DEFS[r.f];
@@ -1938,7 +2075,7 @@ function computeStages(){
   S.filters.forEach(r=>{
     const pred = REAL_FILTER_PRED[r.f];
     if(pred){
-      ws = ws.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, r.v, r.o); });
+      ws = ws.filter(id=>{ const p=PROCS_BY_ID.get(id); return p && pred(p, r.v, r.o); });
     }
     stages.push({filter:r, ws});
   });
@@ -1964,15 +2101,18 @@ function addFilter(f, o, v, delta){
        игнорировался, и S.workingSet оставался прежним. Теперь честно
        применяем, даже если совпадений не осталось — см. комментарий у
        computeStages(). */
-    S.workingSet = S.workingSet.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, v, o); });
+    S.workingSet = S.workingSet.filter(id=>{ const p=PROCS_BY_ID.get(id); return p && pred(p, v, o); });
   }
   S.total = currentTotal();
 }
+/* Раньше новая строка сразу получала первое неиспользуемое поле и его
+   дефолтное значение — пользователь должен был заметить и поменять то, что
+   подставилось само, вместо того чтобы осознанно выбрать критерий (просьба
+   заказчика, 18.08.2026). Теперь строка стартует пустой (f:null) — critRow()
+   в этом случае показывает только выбор поля, без оператора/значения/итога,
+   пока критерий не выбран. */
 function addFilterRow(){
-  const used = S.filters.map(r=>r.f);
-  const avail = Object.keys(FIELD_DEFS).find(f=>!used.includes(f)) || Object.keys(FIELD_DEFS)[0];
-  const def = FIELD_DEFS[avail];
-  S.filters.push({f:avail, o:def.ops[0], v:def.values?def.values[0]:'', delta:def.delta});
+  S.filters.push({f:null, o:null, v:'', delta:0});
   render();
 }
 function removeFilterRow(i){ S.filters.splice(i,1); render(); }
@@ -1994,10 +2134,18 @@ function applyCrit(){
   closeCritModal();
 }
 function critRow(r,i){
+  if(!r.f){
+    return `<div class="crow">
+      <span class="cidx">${i+1}.</span>
+      ${fieldDD('cf'+i,'chat',i,null)}
+      <span style="flex:1;color:var(--ink4);font-size:12px">Сначала выберите критерий</span>
+      <button class="ctrash" onclick="removeFilterRow(${i})">🗑</button>
+    </div>`;
+  }
   const warn = r.realTotal!=null && r.realTotal<=5;
   return `<div class="crow ${warn?'warn':''}">
     <span class="cidx">${i+1}.</span>
-    ${ddField('cf'+i,'f','chat',i,r.f,Object.keys(FIELD_DEFS))}
+    ${fieldDD('cf'+i,'chat',i,r.f)}
     ${ddField('co'+i,'o','chat',i,r.o,opsFor(r.f))}
     ${valueField('cv'+i,'chat',i,r)}
     <span class="cdelta num">−${fmt(r.delta)}</span>
@@ -2172,6 +2320,77 @@ function viewStart(){
 function focusQ(){ const e=document.getElementById('qIn'); if(e) setTimeout(()=>e.focus(),60); }
 function pick(x){ document.getElementById('qIn').value=x; startS(); }
 
+/* ---------- ONBOARDING TOUR: спотлайт по реальному интерфейсу ----------
+   По выбору заказчика (18.08.2026) — не отдельный экран-макет, а короткий
+   (4 шага) тур ПОВЕРХ настоящего интерфейса: подсвечивается один реальный
+   элемент за раз (поле ввода → «Ход подбора» → блоки критериев → счётчик
+   в рейле), с текстовой подсказкой и «Далее/Пропустить». Стартует один раз
+   за сессию сразу после первого запроса (когда карусель критериев, рейл и
+   поле ввода уже одновременно на экране) и доступен повторно из меню
+   профиля. TOUR_EVER_STARTED — модульный флаг (не часть S/reset()), чтобы
+   переключение между чатами не запускало тур заново. */
+let TOUR_EVER_STARTED = false;
+const TOUR_STEPS = [
+ {sel:'#freeIn', title:'Пишите как обычно',
+  text:'Отвечайте на вопросы или сразу пишите то, что важно — например, «нужна отсрочка платежа на 30 дней».'},
+ {sel:'.rp .pcard', title:'Ход подбора',
+  text:'Здесь видно, какие критерии уже учтены, а какие ещё предстоит уточнить.'},
+ {sel:'.carw', title:'Уточняйте по блокам',
+  text:'Можно выбрать один или сразу несколько критериев для уточнения — не обязательно по одному.'},
+ {sel:'.rp .pcta', title:'Подборка всегда под рукой',
+  text:'Здесь видно, сколько процедур сейчас подходит. Открыть подборку можно в любой момент, не дожидаясь конца уточнений.'},
+];
+function startTour(){
+  if(!document.querySelector(TOUR_STEPS[0].sel) && !TOUR_STEPS.slice(1).some(s=>document.querySelector(s.sel))) return;
+  TOUR_EVER_STARTED = true;
+  S.tourStep = 0;
+  render();
+}
+function tourNext(){
+  if(S.tourStep==null) return;
+  const next = S.tourStep+1;
+  if(next>=TOUR_STEPS.length){ endTour(); return; }
+  S.tourStep = next;
+  render();
+}
+function endTour(){ S.tourStep=null; render(); }
+/* Не у каждого шага гарантированно есть цель на экране в момент показа
+   (например, карусель критериев пользователь уже мог закрыть/пройти) —
+   молча пропускаем шаги без цели, а не показываем пустой тур. */
+function renderTourLayer(){
+  if(S.tourStep==null) return '';
+  let idx = S.tourStep;
+  let el = document.querySelector(TOUR_STEPS[idx].sel);
+  while(!el && idx<TOUR_STEPS.length-1){ idx++; el = document.querySelector(TOUR_STEPS[idx].sel); }
+  if(!el){ S.tourStep=null; return ''; }
+  if(idx!==S.tourStep) S.tourStep = idx;
+  const step = TOUR_STEPS[idx];
+  const r = el.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const pad = 6;
+  const top = Math.max(0, r.top-pad), left = Math.max(0, r.left-pad);
+  const right = Math.min(vw, r.right+pad), bottom = Math.min(vh, r.bottom+pad);
+  const rects = `<div class="tourdim" style="left:0;top:0;width:100%;height:${top}px" onclick="tourNext()"></div>
+    <div class="tourdim" style="left:0;top:${bottom}px;width:100%;height:${Math.max(0,vh-bottom)}px" onclick="tourNext()"></div>
+    <div class="tourdim" style="left:0;top:${top}px;width:${left}px;height:${Math.max(0,bottom-top)}px" onclick="tourNext()"></div>
+    <div class="tourdim" style="left:${right}px;top:${top}px;width:${Math.max(0,vw-right)}px;height:${Math.max(0,bottom-top)}px" onclick="tourNext()"></div>
+    <div class="tourring" style="left:${left}px;top:${top}px;width:${right-left}px;height:${bottom-top}px"></div>`;
+  const bubbleW = 280;
+  const belowFits = bottom+150<vh;
+  const bubTop = belowFits ? bottom+12 : Math.max(12, top-152);
+  const bubLeft = Math.min(Math.max(left,12), Math.max(12,vw-bubbleW-12));
+  const last = idx===TOUR_STEPS.length-1;
+  return `<div class="tourlay">${rects}
+    <div class="tourbub" style="top:${bubTop}px;left:${bubLeft}px;width:${bubbleW}px">
+      <div class="tourhead">${esc(step.title)}<span class="tourdots">${TOUR_STEPS.map((_,i)=>`<i class="${i===idx?'on':''}"></i>`).join('')}</span></div>
+      <div class="tourtext">${esc(step.text)}</div>
+      <div class="tourfoot">
+        <button class="chip muted" onclick="endTour()">Пропустить</button>
+        <button class="chip" onclick="tourNext()">${last?'Понятно':'Далее →'}</button>
+      </div>
+    </div>
+  </div>`;
+}
 function viewOnboard(){
   return `<div class="onb"><div class="in">
     <h1>Добро пожаловать!</h1>
@@ -2220,6 +2439,11 @@ function startS(){
   botThink(()=>{
     say('bot', `Понял. Ищу закупки по запросу «${esc(v)}».<br><span style="color:var(--ink3);font-size:12.5px">Найдено <b class="num">${fmt(S.total)}</b> процедур</span><br><b>Выберите несколько критериев, по которым нужно уточнить поиск:</b>`, 'carousel');
     render();
+    /* Спотлайт-тур — один раз за сессию, ровно в момент, когда поле ввода,
+       рейл «Ход подбора» и карусель критериев уже одновременно на экране
+       (см. TOUR_STEPS). Небольшая задержка — чтобы не накладываться на
+       анимацию появления сообщения. */
+    if(!TOUR_EVER_STARTED) setTimeout(()=>startTour(), 500);
   }, 900);
 }
 /* Запуск нового подбора по сохранённому шаблону критериев — тот же набор
@@ -2250,7 +2474,7 @@ function startFromTemplate(name){
        ноль от одного из критериев шаблона тихо игнорировался, и подборка
        оставалась на предыдущем (непустом) шаге. По тому же принципу, что и
        everywhere else в этой сессии — честный ноль остаётся нулём. */
-    if(pred){ ws = ws.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, r.v, r.o); }); }
+    if(pred){ ws = ws.filter(id=>{ const p=PROCS_BY_ID.get(id); return p && pred(p, r.v, r.o); }); }
   });
   S.workingSet = ws; S.total = ws.length;
   CHATS.unshift({id:chatId, n:(query||name).length>22?(query||name).slice(0,20)+'…':(query||name), c:S.total, state:null});
@@ -2393,10 +2617,10 @@ function fieldLabel(name){ const f=FIELD_DEFS[name]; return (f&&f.label)||name; 
    потерялось, ни exact-, ни scored-проход угадывания поля их не видел —
    реальный баг 13.08.2026, найден в ходе аудита «проверь все фильтры»). */
 function labelWordsRaw(name){
-  return String(fieldLabel(name)||'').toLowerCase().split(/[^a-zа-яё0-9]+/).filter(Boolean);
+  return normRu(fieldLabel(name)).split(/[^a-zа-я0-9]+/).filter(Boolean);
 }
 function rawWords(s){
-  return String(s||'').toLowerCase().split(/[^a-zа-яё0-9]+/).filter(Boolean);
+  return normRu(s).split(/[^a-zа-я0-9]+/).filter(Boolean);
 }
 /* Убираем из текста слова названия поля (целиком, без учёта регистра) —
    используется, когда САМО название/аббревиатуру поля пользователь печатает
@@ -2462,12 +2686,26 @@ function confirmPick(){
 function nextQuestion(){
   if(S.qi < S.queue.length) askQuestion(); else afterQueue();
 }
-function askQuestion(){
-  const name = S.queue[S.qi]; const f = FIELD_DEFS[name];
+/* Выделено из askQuestion() — используется и им, и goBack() (см. там), когда
+   нужно честно переспросить конкретное поле напрямую, а не через S.queue[qi]. */
+function pushQuestionMsg(name){
+  const f = FIELD_DEFS[name];
+  /* Защита от «двух одновременных активных вопросов» — реальный баг,
+     найден фазз-тестированием 18.08.2026: если где-то до этого сообщение
+     с прошлым вопросом не было очищено (x всё ещё 'question'), questionChips()
+     всё равно рисует чипы ТЕКУЩЕГО S.curField под ЕГО (старым) текстом —
+     на экране вопрос от одного поля, а варианты ответа от другого. Вместо
+     того чтобы полагаться на то, что каждый вызывающий код аккуратно
+     почистил предыдущий вопрос, чистим здесь безусловно, при показе
+     любого нового. */
+  S.chat.forEach(m=>{ if(m.x==='question') m.x=null; });
   S.curField = name;
   const tip = f.tip ? ` <span class="tipi" title="${esc(f.tip)}">ⓘ</span>` : '';
   say('bot', `<b>${f.q}</b>${tip}${f.d?`<div style="margin-top:4px;color:var(--ink3);font-size:12.5px">${f.d}</div>`:''}`, 'question');
   render();
+}
+function askQuestion(){
+  pushQuestionMsg(S.queue[S.qi]);
 }
 function questionChips(){
   const f = FIELD_DEFS[S.curField]; if(!f) return '';
@@ -2492,7 +2730,17 @@ function focusFreeInput(){
 function answerQ(val){
   const name = S.curField; const f = FIELD_DEFS[name];
   /* снимок «до ответа» — по нему кнопка «Назад» откатывает 1-3 шага подряд */
-  S.history.push({qi:S.qi, filtersLen:S.filters.length, usedLen:S.usedItems.length, skippedLen:S.skipped.length, chatLen:S.chat.length});
+  /* f:S.curField — САМО поле, вопрос по которому сейчас активен, а не
+     только его позиция (qi) в S.queue. S.queue — не стабильный массив: он
+     может измениться уже ПОСЛЕ этого снимка (вставка нового вопроса из
+     свободного текста через S.queue.splice, или вообще полная замена при
+     новом выборе блока критериев через confirmPick). Старый qi тогда
+     указывал бы в текущем S.queue на случайное, не то поле — goBack()
+     показывал текст одного вопроса, а чипы (которые строятся из
+     S.curField на момент рендера) — от другого (реальный баг, найден
+     фазз-тестированием, 18.08.2026). qi всё ещё сохраняем как запасной
+     вариант для случая, когда поле уже не найти ни в каком S.queue. */
+  S.history.push({qi:S.qi, f:S.curField, filtersLen:S.filters.length, usedLen:S.usedItems.length, skippedLen:S.skipped.length, chatLen:S.chat.length});
   say('me', val);
   const last=S.chat.filter(m=>m.x==='question').pop(); if(last) last.x=null;
   render();
@@ -2522,7 +2770,17 @@ function advanceAfterAnswer(){ S.qi++; botThink(()=>{ nextQuestion(); }, 850); }
 async function freeAnswerToQuestion(text){
   const name = S.curField; const f = FIELD_DEFS[name];
   const kind = llmFieldKind(f);
-  S.history.push({qi:S.qi, filtersLen:S.filters.length, usedLen:S.usedItems.length, skippedLen:S.skipped.length, chatLen:S.chat.length});
+  /* f:S.curField — САМО поле, вопрос по которому сейчас активен, а не
+     только его позиция (qi) в S.queue. S.queue — не стабильный массив: он
+     может измениться уже ПОСЛЕ этого снимка (вставка нового вопроса из
+     свободного текста через S.queue.splice, или вообще полная замена при
+     новом выборе блока критериев через confirmPick). Старый qi тогда
+     указывал бы в текущем S.queue на случайное, не то поле — goBack()
+     показывал текст одного вопроса, а чипы (которые строятся из
+     S.curField на момент рендера) — от другого (реальный баг, найден
+     фазз-тестированием, 18.08.2026). qi всё ещё сохраняем как запасной
+     вариант для случая, когда поле уже не найти ни в каком S.queue. */
+  S.history.push({qi:S.qi, f:S.curField, filtersLen:S.filters.length, usedLen:S.usedItems.length, skippedLen:S.skipped.length, chatLen:S.chat.length});
   say('me', esc(text));
   const last=S.chat.filter(m=>m.x==='question').pop(); if(last) last.x=null;
   if(kind==='text'){
@@ -2564,7 +2822,13 @@ async function freeAnswerToQuestion(text){
    оператор показывается человеку (подтверждение в чате, дропдаун в
    «Критериях подбора»), — однозначная словесная формулировка, а не голое
    служебное название. */
-const OP_LABEL = {'Больше':'больше или равно','Меньше':'меньше или равно','Равен':'равен','Диапазон':'≈ примерно','До':'до','После':'после'};
+/* «Диапазон» без второй границы (одно число, не настоящий "от–до") раньше
+   подписывался «≈ примерно» — но numMatches теперь сравнивает точно (см.
+   комментарий там), а подпись обещала неточность, которой на самом деле
+   нет (просьба заказчика, 18.08.2026: «должно быть чётко всё, как
+   пользователь просит»). Настоящий диапазон "min-max" вообще не заходит в
+   OP_LABEL — он форматируется отдельно в numValLabel() как «от X до Y». */
+const OP_LABEL = {'Больше':'больше или равно','Меньше':'меньше или равно','Равен':'равен','Диапазон':'равен','До':'до','После':'после'};
 /* Значение может быть настоящим диапазоном "min-max" (см. parseNumberRange) —
    для него «≈ примерно» (OP_LABEL['Диапазон']) вводит в заблуждение: обе
    границы известны точно, показываем «от X до Y», а не приближение. */
@@ -2602,6 +2866,7 @@ function applyFreeAnswer(name, f, rawText, result){
     ? `сервис распознавания недоступен (${esc(result.reason||'ошибка сети')})`
     : 'не удалось сопоставить ответ ни с одним из допустимых вариантов';
   const kind = llmFieldKind(f);
+  S.chat.forEach(m=>{ if(m.x==='question') m.x=null; }); /* см. pushQuestionMsg() — та же защита от двух активных вопросов сразу */
   if(kind==='enum'){
     say('bot', `Не смог распознать «${esc(rawText)}» — ${reason}.<br>Выберите один из вариантов ниже или переформулируйте ответ.`, 'question');
   } else {
@@ -2612,19 +2877,41 @@ function applyFreeAnswer(name, f, rawText, result){
 function goBack(){
   if(!S.history.length) return;
   const cp = S.history.pop();
-  S.qi = cp.qi;
   S.filters.length = cp.filtersLen; S.usedItems.length = cp.usedLen; S.skipped.length = cp.skippedLen||0; S.chat.length = cp.chatLen;
   /* S.workingSet тоже нужно откатить, а не только S.filters — иначе после
      «Назад» список кандидатов остаётся сужен по уже отменённому ответу.
      Пересчитываем с нуля от исходного запроса по оставшимся критериям. */
   recomputeWorkingSet();
   S.total = currentTotal();
+  /* Восстанавливаем поле НАПРЯМУЮ (cp.f), а не через S.queue[cp.qi] — см.
+     комментарий у S.history.push(). Позицию в очереди ищем по имени поля в
+     ТЕКУЩЕМ S.queue (могла сместиться из-за вставки нового вопроса), а не
+     доверяем старому числовому индексу; если поля в очереди уже нет вовсе
+     (она была заменена целиком другим набором блоков) — используем старый
+     qi как запасной вариант. */
+  S.curField = cp.f;
+  const idxInQueue = S.queue.indexOf(cp.f);
+  S.qi = idxInQueue>=0 ? idxInQueue : cp.qi;
+  /* Раньше здесь безусловно превращали ПОСЛЕДНЕЕ сообщение в чате в
+     «активный вопрос» (lastMsg.x='question'), предполагая, что усечение
+     чата по chatLen всегда честно возвращает именно то сообщение с
+     вопросом по cp.f. Это ломалось, если между вопросом и ответом выборка
+     успевала обнулиться/сильно сократиться (checkZero прерывает очередь,
+     НЕ продвигая qi) — тогда «последним» после усечения оказывалось
+     сообщение совсем другого типа (карусель/CTA), и «Назад» показывал ЕГО
+     текст с чипами от cp.f — рассинхрон вопроса и вариантов ответа
+     (реальный баг, найден фазз-тестированием 18.08.2026). Теперь честно
+     проверяем: похоже ли последнее сообщение на вопрос именно по cp.f —
+     если нет, просто переспрашиваем его заново, а не подменяем чужое
+     сообщение. */
+  const f = FIELD_DEFS[cp.f];
   const lastMsg = S.chat[S.chat.length-1];
-  if(lastMsg) lastMsg.x = 'question';
-  S.curField = S.queue[cp.qi];
+  const looksRight = f && lastMsg && lastMsg.who==='bot' && lastMsg.h.includes(esc(f.q));
   S.animatedCount = Math.min(S.animatedCount, S.chat.length);
   S.busy = false;
-  render();
+  if(looksRight){ lastMsg.x = 'question'; render(); }
+  else if(f){ pushQuestionMsg(cp.f); }
+  else { render(); }
 }
 /* Единая точка «что показать после того, как выборка изменилась» — ноль/мало,
    уже достаточно узко (<=GOOD_ENOUGH) или критериев для уточнения больше не
@@ -2655,7 +2942,19 @@ function afterQueue(){ continueOrFinish(); }
    все вопросы очереди) — чтобы не заставлять докликивать оставшиеся вопросы,
    если выборка уже обнулилась, скажем, на 7-м из 10. */
 function checkZero(){
-  if(S.workingSet.length<=5) botThink(()=>{ handleSmallResult(); }, 700);
+  if(S.workingSet.length<=5){
+    /* Прерываем очередь честно, а не тихо «замораживаем» qi посреди
+       недопройденного вопроса — иначе S.qi продолжает указывать на уже
+       обработанное поле, из-за чего S.curField расходится с тем, что
+       реально показано в чате (zero/low-сообщение вместо вопроса) — а это
+       путает всё, что дальше читает S.qi/S.curField (goBack, повторный
+       выбор блока и т.п.; реальный баг, найден фазз-тестированием,
+       18.08.2026). Само поле, вопрос по которому был прерван, остаётся
+       отвеченным/пропущенным честно — через S.filters/S.usedItems, как и
+       раньше, к очереди оно больше не относится. */
+    S.qi = S.queue.length;
+    botThink(()=>{ handleSmallResult(); }, 700);
+  }
 }
 /* «Ноль» и «мало, но не ноль» — РАЗНЫЕ сообщения (просьба заказчика,
    12.08.2026): при настоящем нуле нельзя говорить «почти нет» — только
@@ -2703,7 +3002,7 @@ function singleFilterFixIndex(){
     S.filters.forEach((r,j)=>{
       if(j===i) return;
       const pred = REAL_FILTER_PRED[r.f];
-      if(pred) ws = ws.filter(id=>{ const p=PROCS.find(x=>x.id===id); return p && pred(p, r.v, r.o); });
+      if(pred) ws = ws.filter(id=>{ const p=PROCS_BY_ID.get(id); return p && pred(p, r.v, r.o); });
     });
     if(ws.length>0) return i;
   }
@@ -2922,6 +3221,35 @@ function fieldMatchScore(name, toks){
   toks.forEach(t=>{ if(hay.some(h=>stemMatch(h,t))) s++; });
   return s;
 }
+/* Совпадение конкретно с одним из ДОПУСТИМЫХ ЗНАЧЕНИЙ поля (а не просто с
+   его названием/вопросом) — гораздо более сильный сигнал: значение вроде
+   «отсрочка» буквально называет конкретный ответ, а не просто упоминает
+   тему. Реальный случай (18.08.2026): «нужна отсрочка платежа на 30 дней» —
+   слово «отсрочка» точно совпадает со значением поля «Способ оплаты», а
+   слово «платежа» лишь стеммится с частью НАЗВАНИЯ другого поля («Этапность
+   платежей»/«Этапы оплаты») — без разделения по силе сигнала оба поля
+   получали одинаковый fieldMatchScore, попадали в ничью и guessFieldFromText
+   честно, но неудачно, отказывался угадывать вовсе (см. ниже). */
+function fieldValueScore(name, toks){
+  const f = FIELD_DEFS[name];
+  const vals = Array.isArray(f.values) ? f.values : [];
+  if(!vals.length) return 0;
+  /* Не «сколько слов из текста нашлось хоть где-то среди значений» (тогда
+     частичное совпадение с ОДНИМ словом многословного значения — «платежей»
+     из «График платежей» — весило бы наравне с полным совпадением
+     однословного значения «Отсрочка», что и создавало ложную ничью выше).
+     А максимальная ДОЛЯ покрытия по каждому отдельному значению — полное
+     совпадение с целым значением весит больше, чем совпадение с частью
+     составного. */
+  let best = 0;
+  vals.forEach(v=>{
+    const vToks = tokenize(v);
+    if(!vToks.length) return;
+    const matched = vToks.filter(vt=>toks.some(t=>stemMatch(vt,t))).length;
+    best = Math.max(best, matched/vToks.length);
+  });
+  return best;
+}
 /* Угадываем только среди ещё НЕ отвеченных полей (S.usedItems) — если
    критерий уже проставлен, менять его через свободный текст не пытаемся:
    для этого уже есть модалка «Критерии подбора» и ✕ на чипе критерия.
@@ -2936,15 +3264,27 @@ function guessFieldFromText(text){
   const rawToks = rawWords(text); /* без ограничения по длине — см. labelWordsRaw */
   if(!toks.length && !rawToks.length) return null;
   const candidates = Object.keys(FIELD_DEFS).filter(n=>!S.usedItems.includes(n));
-  const norm = String(text||'').trim().toLowerCase();
+  const norm = normRu(text).trim();
   /* Сверяем и с видимым названием (label), и со старым техническим ключом
      (name) — второе на случай, если пользователь всё же напечатал старую
      формулировку по памяти. Плюс — отдельно точное совпадение по ЦЕЛОМУ
-     короткому слову из названия («ИНН», «КСР» — 3 буквы, tokenize() их
-     режет по длине >3 символа и раньше эти поля вообще не находились по
-     свободному тексту, см. labelWordsRaw). */
-  const exact = candidates.filter(n=>norm.includes(fieldLabel(n).toLowerCase()) || norm.includes(n.toLowerCase())
-    || labelWordsRaw(n).some(w=>w.length>=3 && rawToks.includes(w)));
+     слову-аббревиатуре из явного списка («ИНН», «КСР» — tokenize() режет их
+     по длине >3 символа, поэтому без отдельной проверки эти поля вообще не
+     находились по свободному тексту, см. labelWordsRaw).
+     ВАЖНО: список именно ЯВНЫЙ (не «любое слово короче N символов») —
+     сначала пробовали общее правило по длине (сначала «>=3» — реальный баг,
+     18.08.2026: обычное слово «продукции» длиннее 3 букв тоже считалось
+     точным совпадением и путало «Тип продукции»/«Категория ОКПД 2»; потом
+     «<=3» — тоже реальный баг: короткие предлоги «на»/«по»/«до» и т.п.
+     длиной 2-3 буквы есть почти в любой фразе и есть в лейблах случайных
+     полей — тоже создавали ложные точные совпадения). Обычные слова любой
+     длины и так находятся штатным scored-путём ниже
+     (fieldNameCoverage/fieldMatchScore/fieldValueScore) — этот список нужен
+     ТОЛЬКО для настоящих аббревиатур, которые иначе не увидит вообще
+     ничего. */
+  const FIELD_ABBREVS = new Set(['инн','кср','окпд2','нмц','бг','мсп','соно']);
+  const exact = candidates.filter(n=>norm.includes(normRu(fieldLabel(n))) || norm.includes(normRu(n))
+    || labelWordsRaw(n).some(w=>FIELD_ABBREVS.has(w) && rawToks.includes(w)));
   if(exact.length===1) return exact[0];
   if(exact.length>1){
     /* Название одного поля целиком входит в название другого (редко, но
@@ -2954,11 +3294,14 @@ function guessFieldFromText(text){
     return exact[0];
   }
   const scored = candidates
-    .map(n=>({n, cov:fieldNameCoverage(n, toks), s:fieldMatchScore(n, toks)}))
+    .map(n=>({n, cov:fieldNameCoverage(n, toks), s:fieldMatchScore(n, toks), vs:fieldValueScore(n, toks)}))
     .filter(x=>x.s>0);
   if(!scored.length) return null;
-  scored.sort((a,b)=>b.cov-a.cov || b.s-a.s);
-  if(scored.length>1 && scored[0].cov===scored[1].cov && scored[0].s===scored[1].s) return null;
+  /* Совпадение с конкретным значением поля (vs) — приоритетнее покрытия
+     названия/общего счёта: «отсрочка» точно называет вариант ответа, это
+     сильнее, чем случайное пересечение слов в названии другого поля. */
+  scored.sort((a,b)=>b.vs-a.vs || b.cov-a.cov || b.s-a.s);
+  if(scored.length>1 && scored[0].vs===scored[1].vs && scored[0].cov===scored[1].cov && scored[0].s===scored[1].s) return null;
   return scored[0].n;
 }
 /* Реальный кейс (13.08.2026): «хочу уточнить график поставки» → поле
@@ -3263,7 +3606,7 @@ function sortedResultProcs(){
      ноль остаётся нулём и здесь, viewGrid() показывает пустое состояние
      явно, а не весь каталог вместо результата. */
   const ids = S.workingSet || [];
-  const arr = ids.map(id=>PROCS.find(p=>p.id===id)).filter(Boolean);
+  const arr = ids.map(id=>PROCS_BY_ID.get(id)).filter(Boolean);
   return sortArr(arr);
 }
 function sortLabel(){
@@ -3489,7 +3832,7 @@ function bulkFolder(){
    снова, хотя по смыслу ничего не менялось. Проигрываем анимацию
    только при первом открытии карточки или при переключении на другую
    процедуру — не при каждой перерисовке. */
-function openCard(id){ S.curProc=PROCS.find(p=>p.id===id); S.cardOpen=true; render(); }
+function openCard(id){ S.curProc=PROCS_BY_ID.get(id); S.cardOpen=true; render(); }
 function closeCard(){ S.cardOpen=false; S.cardAnimId=null; render(); }
 /* Раньше карточка всегда показывала один и тот же фиксированный набор
    полей (НМЦ/Оплата/Место поставки/Окончание приёма), независимо от того,
@@ -3555,22 +3898,21 @@ function viewCard(){
   const p=displayProc(S.curProc);
   const fresh = S.cardAnimId !== p.id;
   S.cardAnimId = p.id;
-  /* Базовый набор — все «формализованные» критерии (CARD_BASE_FIELDS, по
-     CSV «Критерии из документации»): карточка показывает их ВСЕГДА,
-     независимо от того, что выбрал пользователь в подборе (п.4 просьбы
-     заказчика). Плюс — критерии, которые пользователь реально выбрал
-     (S.filters), если их ещё нет среди базовых, с отдельной пометкой.
+  /* Раньше здесь показывались ВСЕ формализованные критерии (CARD_BASE_FIELDS)
+     безусловно, вне зависимости от того, выбрал ли их пользователь в
+     подборе, — по прямой просьбе заказчика (18.08.2026) сузили: в основной
+     таблице карточки теперь только формализованные критерии, которые
+     ДЕЙСТВИТЕЛЬНО применены (S.filters). Остальные формализованные поля
+     (не выбранные в подборе) — по-прежнему доступны через «Все критерии»
+     (openM_allcrit), просто больше не дублируются здесь по умолчанию.
      Значения — настоящие, с ЭТОЙ процедуры (critValueOnProc), не то, что
      человек напечатал — ввод пользователя только выбирает ИЗ неизменной
      базы, а не подставляется в карточку как есть. */
-  const baseRows = CARD_BASE_FIELDS
-    .map(name=>({name, val:critValueOnProc(name, p)}))
-    .filter(r=>r.val!==null);
-  const baseNames = new Set(baseRows.map(r=>r.name));
-  const extraRows = S.filters
+  const baseRows = S.filters
+    .filter(r=>FIELD_SOURCE_TYPE[r.f]==='Формализованные')
     .map(r=>({name:r.f, val:critValueOnProc(r.f, p)}))
-    .filter(r=>r.val!==null && !baseNames.has(r.name));
-  const rows = baseRows.concat(extraRows)
+    .filter(r=>r.val!==null);
+  const rows = baseRows
     .map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(String(r.val))}</td></tr>`).join('');
   /* Превью в блоке «Критерии из документации» — только НЕформализованные
      критерии из числа применённых фильтров (формализованные и так уже
@@ -3589,8 +3931,9 @@ function viewCard(){
     <div class="csc">
       <div class="ctit">${esc(p.n)}</div>
       <a class="ccust" onclick="toast('Открывается новой вкладкой')">${esc(p.cust)}</a>
-      <div style="font-size:11px;color:var(--ink4);margin-bottom:4px">${extraRows.length?'Формализованные критерии + то, что вы указали в подборе':'Формализованные критерии'}</div>
-      <table class="ktab">${rows}</table>
+      <div style="font-size:11px;color:var(--ink4);margin-bottom:4px">${baseRows.length?'Формализованные критерии из подбора':'Формализованные критерии не выбирались'}</div>
+      ${baseRows.length?`<table class="ktab">${rows}</table>`
+        :`<div style="font-size:12px;color:var(--ink4);margin:2px 0 8px">Остальные формализованные поля этой процедуры — в «Все критерии» ниже.</div>`}
       <a class="morea" onclick="toast('Открывается новой вкладкой в торговой секции')">Подробнее ↗</a>
       <div class="docbox">
         <div class="dt">Критерии из документации <span class="spark">✦</span></div>
@@ -3707,7 +4050,7 @@ function folderBaseProcs(){
   const f = findFolder(S.curFolder);
   if(!f) return [];
   const shown = f.items.filter(i=>S.folderItemsTab==='active' ? !i.archived : i.archived);
-  return shown.map(i=>PROCS.find(p=>p.id===i.id)).filter(Boolean);
+  return shown.map(i=>PROCS_BY_ID.get(i.id)).filter(Boolean);
 }
 function applyFolderFilters(arr){
   /* Тот же «предохранитель», что был везде в основном поиске (тихо
@@ -3724,10 +4067,7 @@ function applyFolderFilters(arr){
 function openFolderCritModal(){ S.folderCritModalOpen=true; S.openDD=null; render(); }
 function closeFolderCritModal(){ S.folderCritModalOpen=false; render(); }
 function addFolderFilterRow(){
-  const used = S.folderFilters.map(r=>r.f);
-  const avail = Object.keys(FIELD_DEFS).find(f=>!used.includes(f)) || Object.keys(FIELD_DEFS)[0];
-  const def = FIELD_DEFS[avail];
-  S.folderFilters.push({f:avail, o:def.ops[0], v:def.values?def.values[0]:'', delta:def.delta});
+  S.folderFilters.push({f:null, o:null, v:'', delta:0}); /* см. addFilterRow() — строка стартует пустой */
   render();
 }
 function removeFolderFilterRow(i){ S.folderFilters.splice(i,1); render(); }
@@ -3744,10 +4084,18 @@ function folderCritRunning(){
   });
 }
 function folderCritRow(r,i){
+  if(!r.f){
+    return `<div class="crow">
+      <span class="cidx">${i+1}.</span>
+      ${fieldDD('ff'+i,'folder',i,null)}
+      <span style="flex:1;color:var(--ink4);font-size:12px">Сначала выберите критерий</span>
+      <button class="ctrash" onclick="removeFolderFilterRow(${i})">🗑</button>
+    </div>`;
+  }
   const warn = r.total<=2;
   return `<div class="crow ${warn?'warn':''}">
     <span class="cidx">${i+1}.</span>
-    ${ddField('ff'+i,'f','folder',i,r.f,Object.keys(FIELD_DEFS))}
+    ${fieldDD('ff'+i,'folder',i,r.f)}
     ${ddField('fo'+i,'o','folder',i,r.o,opsFor(r.f))}
     ${valueField('fv'+i,'folder',i,r)}
     <span class="cdelta num">−${fmt(r.delta)}</span>
@@ -3772,7 +4120,7 @@ function renderFolderCritModal(){
 function viewFolderGrid(){
   const f = findFolder(S.curFolder);
   const shown = f.items.filter(i=>S.folderItemsTab==='active' ? !i.archived : i.archived);
-  let procs = shown.map(i=>PROCS.find(p=>p.id===i.id)).filter(Boolean);
+  let procs = shown.map(i=>PROCS_BY_ID.get(i.id)).filter(Boolean);
   procs = sortArr(applyFolderFilters(procs));
   const activeN = f.items.filter(i=>!i.archived).length;
   const archN = f.items.filter(i=>i.archived).length;
@@ -3841,10 +4189,7 @@ function viewTemplateDetail(){
 }
 function startTplEdit(t){ S.templateEdit=true; S.openDD=null; S.curTplRules=t.rules.slice(1).map(r=>({...r})); render(); }
 function addTplRule(){
-  const used=S.curTplRules.map(r=>r.f);
-  const avail=Object.keys(FIELD_DEFS).find(f=>!used.includes(f))||Object.keys(FIELD_DEFS)[0];
-  const def=FIELD_DEFS[avail];
-  S.curTplRules.push({f:avail, o:def.ops[0], v:def.values?def.values[0]:''});
+  S.curTplRules.push({f:null, o:null, v:''}); /* см. addFilterRow() — строка стартует пустой */
   render();
 }
 function saveTplEdit(n){
@@ -3859,11 +4204,16 @@ function viewTemplateEdit(t){
     <div class="dh"><span class="t">${esc(t.n)}</span><button class="x" onclick="S.templateEdit=false;S.curTplRules=null;render()">×</button></div>
     <div class="dsc">
       <div class="esearch">🔍 Запрос: ${esc(t.rules[0].v)}</div>
-      ${S.curTplRules.map((r,i)=>`<div class="econd">
+      ${S.curTplRules.map((r,i)=>r.f?`<div class="econd">
         <span class="en">${i+1}.</span>
-        ${ddField('tf'+i,'f','tpl',i,r.f,Object.keys(FIELD_DEFS))}
+        ${fieldDD('tf'+i,'tpl',i,r.f)}
         ${ddField('to'+i,'o','tpl',i,r.o,opsFor(r.f))}
         ${valueField('tv'+i,'tpl',i,r)}
+        <button class="ctrash" onclick="S.curTplRules.splice(${i},1);render()">🗑</button>
+      </div>`:`<div class="econd">
+        <span class="en">${i+1}.</span>
+        ${fieldDD('tf'+i,'tpl',i,null)}
+        <span style="flex:1;color:var(--ink4);font-size:12px">Сначала выберите критерий</span>
         <button class="ctrash" onclick="S.curTplRules.splice(${i},1);render()">🗑</button>
       </div>`).join('')}
       <div class="eadd" onclick="addTplRule()">⊕ Добавить</div>
