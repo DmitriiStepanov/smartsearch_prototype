@@ -434,6 +434,15 @@ body.reqs .req{display:inline-block}
 .tourdim{position:fixed;background:rgba(15,17,26,.55);pointer-events:auto;transition:all .2s ease}
 .tourring{position:fixed;border:2px solid var(--blue);border-radius:10px;
   box-shadow:0 0 0 4px rgba(47,92,224,.22);pointer-events:none;transition:all .2s ease}
+/* Раньше сама подсвеченная область оставалась «дыркой» и в буквальном
+   смысле кликабельной — можно было случайно взаимодействовать с реальным
+   интерфейсом прямо во время тура (просьба заказчика, «заблокируй всё во
+   время динамического онбординга»). Прозрачный блокирующий слой поверх
+   ТОЙ ЖЕ области, что и .tourring, — сама подсветка видна как раньше
+   (фон не меняем), но клик по ней теперь не доходит до настоящего
+   элемента снизу, а просто листает тур дальше — так же, как клик по
+   затемнению вокруг. */
+.tourhole{position:fixed;background:transparent;pointer-events:auto;cursor:pointer}
 .tourbub{position:fixed;background:#fff;border-radius:12px;padding:14px 16px;
   box-shadow:0 12px 32px rgba(27,30,43,.3);pointer-events:auto;z-index:1401}
 .tourhead{display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -2340,16 +2349,25 @@ const TOUR_STEPS = [
  {sel:'.rp .pcta', title:'Подборка всегда под рукой',
   text:'Здесь видно, сколько процедур сейчас подходит. Открыть подборку можно в любой момент, не дожидаясь конца уточнений.'},
 ];
+/* Блокирующий слой (.tourhole/.tourdim) перехватывает МЫШЬ, но если на
+   момент старта тура фокус уже стоял в поле ввода (#freeIn), с клавиатуры
+   в него всё ещё можно печатать в обход визуальной блокировки — «заблокируй
+   ВСЁ во время тура» касается и этого. Снимаем фокус явно на каждом шаге. */
+function blurActive(){
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+}
 function startTour(){
   if(!document.querySelector(TOUR_STEPS[0].sel) && !TOUR_STEPS.slice(1).some(s=>document.querySelector(s.sel))) return;
   TOUR_EVER_STARTED = true;
   S.tourStep = 0;
+  blurActive();
   render();
 }
 function tourNext(){
   if(S.tourStep==null) return;
   const next = S.tourStep+1;
   if(next>=TOUR_STEPS.length){ endTour(); return; }
+  blurActive();
   S.tourStep = next;
   render();
 }
@@ -2374,7 +2392,8 @@ function renderTourLayer(){
     <div class="tourdim" style="left:0;top:${bottom}px;width:100%;height:${Math.max(0,vh-bottom)}px" onclick="tourNext()"></div>
     <div class="tourdim" style="left:0;top:${top}px;width:${left}px;height:${Math.max(0,bottom-top)}px" onclick="tourNext()"></div>
     <div class="tourdim" style="left:${right}px;top:${top}px;width:${Math.max(0,vw-right)}px;height:${Math.max(0,bottom-top)}px" onclick="tourNext()"></div>
-    <div class="tourring" style="left:${left}px;top:${top}px;width:${right-left}px;height:${bottom-top}px"></div>`;
+    <div class="tourring" style="left:${left}px;top:${top}px;width:${right-left}px;height:${bottom-top}px"></div>
+    <div class="tourhole" style="left:${left}px;top:${top}px;width:${right-left}px;height:${bottom-top}px" onclick="tourNext()"></div>`;
   const bubbleW = 280;
   const belowFits = bottom+150<vh;
   const bubTop = belowFits ? bottom+12 : Math.max(12, top-152);
